@@ -136,7 +136,7 @@ const CARDS = [
     abilities: [
       { kw: 'On Play', when: 'deploy', text: 'When played from hand: Discard up to 2 cards. If you do, choose Witch units you control equal to the number of discarded cards and move each 1 space forward.', ops: [{"op":"discard","n":2,"upTo":true},{"op":"move","to":"allyFilter","dir":"fwd","n":1}] },
       { kw: 'Cont', when: 'cont', text: 'During your turn, the Power of all Witch units you control becomes 2500, and they gain "[Once per turn] At the end of battle this unit attacked: Ready this unit."', ops: [{"op":"ready","to":"self"}] },
-      { kw: 'Trigger', text: ': If you control a Witch unit: Play this unit and 1 other Witch unit from your hand onto different back-row spaces you control.', ops: [] }
+      { kw: 'Trigger', text: 'If you control a Witch unit: Play this unit and 1 other Witch unit from your hand onto different back-row spaces you control.', ops: [] }
     ],
   },
   {
@@ -177,7 +177,7 @@ const CARDS = [
     abilities: [
       { kw: 'Attack', when: 'attack', once: true, text: 'Rest 1 other unit you control: This unit gains +2000 Power until end of turn. At the end of battle, swap positions of this unit and the chosen unit.', ops: [{"op":"cp","to":"self","n":2000,"dur":"turn","color":null,"tribe":null}] },
       { kw: 'Action', when: 'action', once: true, text: 'When your unit moves: You may Rest this unit. If you do, swap positions of this unit and that unit.', ops: [] },
-      { kw: 'Trigger', text: ': Draw 1 cards.', ops: [{"op":"draw","n":1}] }
+      { kw: 'Trigger', text: 'Draw 1 cards.', ops: [{"op":"draw","n":1}] }
     ],
   },
   {
@@ -198,7 +198,7 @@ const CARDS = [
     abilities: [
       { kw: 'Cont', when: 'cont', text: 'During your turn, this unit gains +1000 Power for each other unit with cost 10 or higher you control.', ops: [{"op":"cp","to":"self","n":1000,"dur":"turn","perOtherCostMin":10}] },
       { kw: 'Action', when: 'action', text: 'When you play a unit from hand: If the total cost of units you control on the field is 10 or higher and you do not control "Oskopus, Otherworldly Anomaly", play this unit from your hand Rested onto your front row.', ops: [] },
-      { kw: 'Trigger', text: ': Play this unit onto a space you control. Devour target unit (Merge target under this unit).', ops: [] }
+      { kw: 'Trigger', text: 'Play this unit onto a space you control. Devour target unit (Merge target under this unit).', ops: [] }
     ],
   },
   {
@@ -210,7 +210,7 @@ const CARDS = [
       { kw: 'Cont', when: 'cont', text: 'Gains +1000 Power for each Rested Red unit you control.', ops: [{"op":"cp","to":"target","n":1000,"dur":"turn","color":"Red","tribe":null}] },
       { kw: 'Action', when: 'action', once: true, text: 'When your other unit moves: Rest 1 other Readied unit you control. If you do, move this unit 1 space forward.', ops: [{"op":"move","to":"target","dir":"fwd","n":1}] },
       { kw: 'Action', when: 'action', text: 'When this unit is destroyed by card effects: Discard 1 card. If you do, return this unit to your hand instead of the Out Zone.', ops: [{"op":"discard","n":1,"upTo":false}] },
-      { kw: 'Trigger', text: ': Draw 1 cards.', ops: [{"op":"draw","n":1}] }
+      { kw: 'Trigger', text: 'Draw 1 cards.', ops: [{"op":"draw","n":1}] }
     ],
   },
   {
@@ -219,7 +219,7 @@ const CARDS = [
     cost: 4, cp: 1500,
     protection: false,
     abilities: [
-      { kw: 'On Play', when: 'deploy', cost: 2, text: ': Move this unit 1 space forward.', ops: [{"op":"move","to":"target","dir":"fwd","n":1}] },
+      { kw: 'On Play', when: 'deploy', cost: 2, text: 'Move this unit 1 space forward.', ops: [{"op":"move","to":"target","dir":"fwd","n":1}] },
       { kw: 'Attack', when: 'attack', once: true, text: 'If you control 3 or more Blue units, resolve all of the following in order: - If you have 5 or more Flare: Draw 1 card and this unit gains +3000 Power until end of turn. - Set your Flare to 3 if you have 2 or less Flare.', ops: [{"op":"draw","n":1},{"op":"cp","to":"self","n":3000,"dur":"turn","color":"Blue","tribe":null}], req: [{"kind":"colorCount","min":3},{"kind":"colorCount","color":"Blue","min":3}] }
     ],
   },
@@ -267,8 +267,8 @@ const CARDS = [
     protection: false,
     abilities: [
       { kw: 'Cont', when: 'cont', text: 'During your turn, if you have 10 or less cards in your Out Zone, this unit cannot move.', ops: [], req: [{"kind":"outzoneMax","min":10}] },
-      { kw: 'Activate', cost: 2, once: true, text: ': If you do, and you have 12 or more cards in your Out Zone: Ready this unit. Return 2 Green cards from your Out Zone to the bottom of your deck in any order.', ops: [{"op":"ready","to":"self"},{"op":"outzoneToBottom","filter":"Green","n":2}], req: [{"kind":"outzoneMin","min":12}] },
-      { kw: 'Trigger', text: ': If you have 12 or more cards in your Out Zone, play this unit onto your front row. If not, Mill 4.', ops: [{"op":"mill","n":4}], req: [{"kind":"outzoneMin","min":12}] }
+      { kw: 'Activate', cost: 2, once: true, text: 'If you do, and you have 12 or more cards in your Out Zone: Ready this unit. Return 2 Green cards from your Out Zone to the bottom of your deck in any order.', ops: [{"op":"ready","to":"self"},{"op":"outzoneToBottom","filter":"Green","n":2}], req: [{"kind":"outzoneMin","min":12}] },
+      { kw: 'Trigger', text: 'If you have 12 or more cards in your Out Zone, play this unit onto your front row. If not, Mill 4.', ops: [{"op":"mill","n":4}], req: [{"kind":"outzoneMin","min":12}] }
     ],
   },
   {
@@ -279,7 +279,7 @@ const CARDS = [
     abilities: [
       { kw: 'Activate', once: true, text: 'Rest 1 Terrain card in the space this unit occupies: Ready this unit.', ops: [{"op":"ready","to":"self"}] },
       { kw: 'Attack', when: 'attack', text: 'Mill 1. Then, if you have 10 or more cards in your Out Zone, this unit gains +3000 Power until end of turn.', ops: [{"op":"mill","n":1},{"op":"cp","to":"self","n":3000,"dur":"turn","color":null,"tribe":null}], req: [{"kind":"outzoneMin","min":10}] },
-      { kw: 'Trigger', text: ': Mill 2.', ops: [{"op":"mill","n":2}] }
+      { kw: 'Trigger', text: 'Mill 2.', ops: [{"op":"mill","n":2}] }
     ],
   },
   {
@@ -289,7 +289,7 @@ const CARDS = [
     protection: false,
     abilities: [
       { kw: 'On Play', when: 'deploy', text: 'Mill 1. Choose 1 Green unit with cost 4 or less from your Out Zone; play that unit to your back row Rested. If you have 10 or more cards in your Out Zone, you may play it to your front row instead.', ops: [{"op":"mill","n":1},{"op":"playFromOutzone","filter":"Green","maxCost":4},{"op":"playOutzoneRest","row":"front"}], req: [{"kind":"outzoneMin","min":10}] },
-      { kw: 'Trigger', text: ': Mill 1 and draw 1 card.', ops: [{"op":"draw","n":1},{"op":"mill","n":1}] }
+      { kw: 'Trigger', text: 'Mill 1 and draw 1 card.', ops: [{"op":"draw","n":1},{"op":"mill","n":1}] }
     ],
   },
   {
@@ -308,7 +308,7 @@ const CARDS = [
     protection: false,
     abilities: [
       { kw: 'On Play', when: 'deploy', text: 'Mill 1. Then, if you have 10 or more cards in your Out Zone, draw 1 card.', ops: [{"op":"draw","n":1},{"op":"mill","n":1}], req: [{"kind":"outzoneMin","min":10}] },
-      { kw: 'Trigger', text: ': Mill 2.', ops: [{"op":"mill","n":2}] }
+      { kw: 'Trigger', text: 'Mill 2.', ops: [{"op":"mill","n":2}] }
     ],
   },
   {
@@ -350,7 +350,7 @@ const CARDS = [
     abilities: [
       { kw: 'Passive', text: '(Play this card only if you control a Shaman unit.)', ops: [] },
       { kw: 'Quick-Cast', when: 'quick', text: 'When your unit attacks or is attacked: Choose 1 of your battling Green units; it gains +1000 Power for each Terrain and Green unit you control until end of turn.', ops: [{"op":"cp","to":"target","n":1000,"dur":"turn","color":"Green","tribe":null}] },
-      { kw: 'Trigger', text: ': Choose 1 Shaman unit from your Out Zone; add it to your hand.', ops: [{"op":"addFromOutzone","filter":"Shaman"}] }
+      { kw: 'Trigger', text: 'Choose 1 Shaman unit from your Out Zone; add it to your hand.', ops: [{"op":"addFromOutzone","filter":"Shaman"}] }
     ],
   },
   {
@@ -361,7 +361,7 @@ const CARDS = [
     abilities: [
       { kw: 'Passive', text: '(You can only have up to 6 Protection cards in your deck.)', ops: [] },
       { kw: 'Quick-Cast', when: 'quick', text: 'When your unit is attacked: Choose 1 of your attacked units; it gains +3000 Power until end of turn.', ops: [{"op":"cp","to":"target","n":3000,"dur":"turn","color":null,"tribe":null}] },
-      { kw: 'Trigger', text: ': Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
+      { kw: 'Trigger', text: 'Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
     ],
   },
   {
@@ -372,7 +372,7 @@ const CARDS = [
     abilities: [
       { kw: 'Passive', text: '(You can only have up to 6 Protection cards in your deck.)', ops: [] },
       { kw: 'Quick-Cast', when: 'quick', text: 'When your unit is attacked: Choose 1 of your attacked units; that unit cannot be destroyed by battle until the end of this battle. Then, move that unit back 1 space.', ops: [{"op":"move","to":"target","dir":"back","n":1},{"op":"noDestroyBattle","to":"target"}] },
-      { kw: 'Trigger', text: ': Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
+      { kw: 'Trigger', text: 'Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
     ],
   },
   {
@@ -420,7 +420,7 @@ const CARDS = [
     abilities: [
       { kw: 'Attack', when: 'attack', once: true, text: 'When this unit attacks a unit with cost 6 or higher: Pay 2 Flare. If you do, play 1 Operation Command card from your hand without paying its cost.', ops: [] },
       { kw: 'Action', when: 'action', text: 'When you play an Operation Command card, after it resolves: This unit gains +2000 Power until end of turn.', ops: [{"op":"cp","to":"self","n":2000,"dur":"turn","color":null,"tribe":null}] },
-      { kw: 'Trigger', text: ': If you control 2 or more Blue units in your back row, play this unit onto your back row.', ops: [{"op":"deploySelf","row":"back"}], req: [{"kind":"colorCount","min":2},{"kind":"colorCount","color":"Blue","min":2},{"kind":"colorBackRow","color":"Blue","min":2}] }
+      { kw: 'Trigger', text: 'If you control 2 or more Blue units in your back row, play this unit onto your back row.', ops: [{"op":"deploySelf","row":"back"}], req: [{"kind":"colorCount","min":2},{"kind":"colorCount","color":"Blue","min":2},{"kind":"colorBackRow","color":"Blue","min":2}] }
     ],
   },
   {
@@ -439,7 +439,7 @@ const CARDS = [
     protection: false,
     abilities: [
       { kw: 'On Play', when: 'deploy', text: 'Choose 1: - Choose 1 other Machine unit you control; move that unit 1 space left or right. - If you control another Purple unit, choose 1 unit you control in the front row; swap the positions of this unit and that unit.', ops: [{"op":"move","to":"allyFilter","dir":"side","n":1},{"op":"swap","to":"self"}] },
-      { kw: 'Trigger', text: ': Draw 1 card.', ops: [{"op":"draw","n":1}] }
+      { kw: 'Trigger', text: 'Draw 1 card.', ops: [{"op":"draw","n":1}] }
     ],
   },
   {
@@ -468,7 +468,7 @@ const CARDS = [
     abilities: [
       { kw: 'On Play', when: 'deploy', text: 'Look at the top 4 cards of your deck. Reveal up to 1 Blue card with cost 6 from among them and add it to your hand, then place the rest on the bottom of your deck in any order.', ops: [{"op":"revealAdd","n":4,"filter":"Blue","minCost":6,"maxCost":6},{"op":"toBottomRest"}] },
       { kw: 'Cont', when: 'cont', text: 'If you played an Operation Command card this turn, other units you control in the same column as this unit gain +2000 Power.', ops: [{"op":"cp","to":"allyColumn","n":2000,"dur":"turn","color":null,"tribe":null}], req: [{"kind":"flag","flag":"operationPlayed"}] },
-      { kw: 'Trigger', text: ': Draw 1 card.', ops: [{"op":"draw","n":1}] }
+      { kw: 'Trigger', text: 'Draw 1 card.', ops: [{"op":"draw","n":1}] }
     ],
   },
   {
@@ -478,7 +478,7 @@ const CARDS = [
     protection: false,
     abilities: [
       { kw: 'Cast', when: 'cast', text: 'Choose 1 Machine unit you control; it gains +3000 Power and "[Once per turn] End of battle this unit attacked: Ready this unit" until end of turn. If this card was played by a unit\'s effect, affect all Blue units you control instead of choosing 1 Machine unit.', ops: [{"op":"if","cond":{"kind":"flag","flag":"byUnitEffect"},"then":[{"op":"cp","to":"allyUnits","n":3000,"dur":"turn","color":"Blue"}],"else":[{"op":"cp","to":"ask:machine","n":3000,"dur":"turn","tribe":"Machine","grantReadyAfterBattle":true}]}], req: [{"kind":"flag","flag":"byUnitEffect"}] },
-      { kw: 'Trigger', text: ': Reveal top 3 cards of your deck: Play 1 cost 6 unit from among them onto your back row, send the rest to Out Zone.', ops: [{"op":"revealAdd","n":3,"filter":"unit","keep":true},{"op":"playRevealed","minCost":6,"maxCost":6,"row":"back","restLeft":"outzone"}] }
+      { kw: 'Trigger', text: 'Reveal top 3 cards of your deck: Play 1 cost 6 unit from among them onto your back row, send the rest to Out Zone.', ops: [{"op":"revealAdd","n":3,"filter":"unit","keep":true},{"op":"playRevealed","minCost":6,"maxCost":6,"row":"back","restLeft":"outzone"}] }
     ],
   },
   {
@@ -508,7 +508,7 @@ const CARDS = [
     abilities: [
       { kw: 'Activate', once: true, text: 'Discard 2 card: Choose 1 cost 6 Command card from your Out Zone; add it to your hand.', ops: [{"op":"discard","n":2,"upTo":false},{"op":"addFromOutzone","filter":"Command","minCost":6,"maxCost":6}] },
       { kw: 'Action', when: 'action', text: 'When this unit attacks or is attacked, if this unit is in your front row: It gains +1000 Power until end of turn.', ops: [{"op":"cp","to":"self","n":1000,"dur":"turn","color":null,"tribe":null}] },
-      { kw: 'Trigger', text: ': Play this unit onto your back row.', ops: [] }
+      { kw: 'Trigger', text: 'Play this unit onto your back row.', ops: [] }
     ],
   },
   {
@@ -517,9 +517,9 @@ const CARDS = [
     cost: 4, cp: 1000,
     protection: false,
     abilities: [
-      { kw: 'Activate', cost: 2, once: true, text: ': All cost 6 units you control gain +1000 Power until end of turn, and Ready all other units in your back row.', ops: [{"op":"buffCost6Own","n":1000},{"op":"readyBackRowOthers"}] },
+      { kw: 'Activate', cost: 2, once: true, text: 'All cost 6 units you control gain +1000 Power until end of turn, and Ready all other units in your back row.', ops: [{"op":"buffCost6Own","n":1000},{"op":"readyBackRowOthers"}] },
       { kw: 'Action', when: 'action', text: 'When your Blue unit is destroyed: Destroy this unit. If you do, look at the top 2 cards of your deck, place them on top of your deck in any order, then draw 1 card.', ops: [{"op":"draw","n":1},{"op":"revealAdd","n":2,"filter":"Blue"},{"op":"toBottomRest"},{"op":"destroySelf"}] },
-      { kw: 'Trigger', text: ': Look at the top 2 cards of your deck, place them on top of your deck in any order, then draw 1 card.', ops: [{"op":"draw","n":1},{"op":"revealAdd","n":2,"filter":null},{"op":"toBottomRest"}] }
+      { kw: 'Trigger', text: 'Look at the top 2 cards of your deck, place them on top of your deck in any order, then draw 1 card.', ops: [{"op":"draw","n":1},{"op":"revealAdd","n":2,"filter":null},{"op":"toBottomRest"}] }
     ],
   },
   {
@@ -539,7 +539,7 @@ const CARDS = [
     abilities: [
       { kw: 'Cont', when: 'handCost', text: 'Reduces this card\'s base cost by 2 for each Blue unit you control. If this unit enters the field without using Flare, play it Rested.', ops: [], req: [{"kind":"handCostReduce","per":2,"by":"colorUnits"},{"kind":"inHand"}] },
       { kw: 'Action', when: 'action', text: 'When you play a Command card, after it resolves: This unit gains +1000 Power until end of turn.', ops: [{"op":"cp","to":"self","n":1000,"dur":"turn","color":null,"tribe":null}], req: [{"kind":"flag","flag":"commandPlayed"}] },
-      { kw: 'Trigger', text: ': If you control 3 or more Blue units, gain 1 Point (opponent triggers normally).', ops: [{"op":"point","n":1}], req: [{"kind":"colorCount","min":3},{"kind":"colorCount","color":"Blue","min":3}] }
+      { kw: 'Trigger', text: 'If you control 3 or more Blue units, gain 1 Point (opponent triggers normally).', ops: [{"op":"point","n":1}], req: [{"kind":"colorCount","min":3},{"kind":"colorCount","color":"Blue","min":3}] }
     ],
   },
   {
@@ -549,7 +549,7 @@ const CARDS = [
     protection: true,
     abilities: [
       { kw: 'Quick-Cast', when: 'quick', text: 'When your unit is attacked: Choose 1 of your attacked units; it gains +3000 Power until end of turn.', ops: [{"op":"cp","to":"target","n":3000,"dur":"turn","color":null,"tribe":null}] },
-      { kw: 'Trigger', text: ': Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
+      { kw: 'Trigger', text: 'Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
     ],
   },
   {
@@ -559,7 +559,7 @@ const CARDS = [
     protection: true,
     abilities: [
       { kw: 'Quick-Cast', when: 'quick', text: 'When your unit is attacked: Choose 1 of your attacked units; that unit cannot be destroyed by battle until the end of this battle. Then, move that unit back 1 space.', ops: [{"op":"move","to":"target","dir":"back","n":1},{"op":"noDestroyBattle","to":"target"}] },
-      { kw: 'Trigger', text: ': Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
+      { kw: 'Trigger', text: 'Banishes this card: Your opponent loses 2 points (cannot reduce below 1).', ops: [{"op":"foePoint","n":-2,"floor":1},{"op":"foePoint","n":-2,"floor":1}] }
     ],
   },
 ];

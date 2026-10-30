@@ -343,7 +343,7 @@
 
   function playAt(i, r, c) {
     const S = UI.S, cd = card(S.players[human].hand[i]);
-    if (!cd) return { ok: false, why: 'ไม่มีการ์ดตำแหน่งนี้' };
+    if (!cd) return { ok: false, why: 'ไม่มีการ์ดในตำแหน่งนี้' };
     if (cd.type === 'terrain') return Z.terrain(S, human, i, { r, c });
     if (cd.type === 'command') return Z.command(S, human, i, { r, c }, null);
     return Z.deploy(S, human, i, { r, c });
@@ -824,7 +824,7 @@
   }
   function syncFull() {
     const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
-    const b = $('btnFull'); if (b) { b.textContent = on ? '⤡' : '⤢'; b.classList.toggle('on', on); b.title = on ? 'ออกจากเต็มจอ' : 'เต็มจอ'; }
+    const b = $('btnFull'); if (b) { b.textContent = on ? '⤡' : '⤢'; b.classList.toggle('on', on); b.title = on ? 'ออกจากจอเต็ม' : 'จอเต็ม'; }
   }
 
   function boot() {

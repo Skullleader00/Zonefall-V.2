@@ -252,9 +252,9 @@ const Z = (function () {
      ถ้าไม่ใช้ (หรือไม่มีเอฟเฟกต์) การ์ดขึ้นมือตามปกติ */
   function triggerCheck(S, side) {
     const p = S.players[side];
-    /* V.25: เกิดเครา 1 ไบ/ครั้ง และจะเกิดขึ้นเคราเมื่ออีกฝ้ายไu0e14้เท่าเกีดขึ้น (ไม่มากกันครั้งต่ากเติก เครา 1 ไบเท่านั้น) */
+    /* V.25: Trigger Check เปิดได้ 1 ใบ/ครั้ง และจะเกิดขึ้นเคราเมื่ออีกฝ้ายไu0e14้เท่าเกีดขึ้น (ไม่มากกันครั้งต่ากเติก เครา 1 ไบเท่านั้น) */
     if (R.triggerCheckOncePerTurn !== false) {
-      if (p.tcDone) { log(S, `⟐ Trigger Check (${p.deckName}) — เคราไปแล้วในเทรณนี้`, 'dim'); return; }
+      if (p.tcDone) { log(S, `⟐ Trigger Check (${p.deckName}) — ถูกใช้ไปแล้วในเทิร์นนี้`, 'dim'); return; }
       p.tcDone = true;
     }
     if (!p.deck.length) { log(S, `⟐ Trigger Check — สมุดว่าง (${p.deckName})`, 'dim'); return; }
@@ -269,7 +269,7 @@ const Z = (function () {
       trig.forEach(a => { fx(S, { side, uid: null, cardId: id }, a.ops || [], { triggerCard: id, cardId: id }); });
       const k = p.hand.indexOf(id); if (k >= 0) p.hand.splice(k, 1);
       const used = (p.hand.indexOf(id) < 0);
-      if (trig.some(a => (a.ops || []).some(o => o.op === 'banish'))) { p.remove.push(id); log(S, `  ↳ ใช้ [→ Removezone`, 'dim'); }
+      if (trig.some(a => (a.ops || []).some(o => o.op === 'banish'))) { p.remove.push(id); log(S, `  ↳ ใช้ [${cd.name}] → Removezone`, 'dim'); }
       else { p.outzone.push(id); log(S, `  ↳ ใช้ [${cd.name}] → Outzone`, 'dim'); }
       void used;
     };
@@ -402,7 +402,7 @@ const Z = (function () {
       if (!cands.length) { log(S, `  ↳ ไม่มีเป้าหมายที่ตรงเงื่อนไข${op.prompt ? ' (“' + op.prompt + '”)' : ''} — ข้ามผลส่วนนี้`, 'dim'); return; }
       const hostile = op.op === 'destroy' || op.op === 'bounce' || (op.op === 'move' && op.hostile) || (typeof op.n === 'number' && op.n < 0 && op.op === 'cp');
       pauseOp(S, src, op, ctx, ops, i, {
-        kind: 'target', title: op.prompt || (hostile ? 'เลือกเป้าหมายของผลนี้' : 'เลือดยูนิตผู้รับผล'),
+        kind: 'target', title: op.prompt || (hostile ? 'เลือกเป้าหมายของผลนี้' : 'เลือกยูนิตผู้รับผล'),
         sub: op.hint || '', uids: cands.map(u => u.uid), allowSkip: true, side, replay: true,
         auto: () => { const b = hostile ? bestBy(S, cands, 'high') : bestBy(S, cands, op.n < 0 ? 'low' : 'high'); return b && b.uid; },
         onPick: v => { src.tgt = v ? (S.cards[v] || null) : null; },
@@ -496,7 +496,7 @@ const Z = (function () {
           const list = targetSet(S, src, op.to, op);
           list.forEach(u => {
             if (!u) return;
-            if (op.op === 'ready' && u.restLock === S.turnNo) { log(S, `  ⚑ [${card(u.id).name}] ถูกจัด้งไม่ให้ตั้งคืนในเทรณนี้`, 'dim'); return; }
+            if (op.op === 'ready' && u.restLock === S.turnNo) { log(S, `  ⚑ [${card(u.id).name}] ถูกล็อกไม่ให้ตั้งคืนในเทิร์นนี้`, 'dim'); return; }
             const was = u.rested; u.rested = (op.op === 'rest');
             if (op.op === 'ready' && was && op.lockRestEndOfTurn) u.restLock = S.turnNo;
             if (op.op === 'ready' && was) S.players[u.side].stats.readyByEffect++;
@@ -587,7 +587,7 @@ const Z = (function () {
           if (cands.length === 1 || !isHuman(S, src.side)) { take(cands[0]); break; }
           ctx.__pause = true;
           pauseOp(S, src, op, ctx, ops, i, {
-            kind: 'outzone', title: op.prompt || 'เลือกการด์จาก Outzone', cardIds: cands.slice(), side: src.side,
+            kind: 'outzone', title: op.prompt || 'เลือกการ์ดจาก Outzone', cardIds: cands.slice(), side: src.side,
             auto: () => cands[0], onPick: v => v && take(v),
           });
           break;
@@ -996,11 +996,11 @@ const Z = (function () {
   }
 
   function execMove(S, a) {
-    const u = S.cards[a.uid]; if (!u) return { ok: false, why: 'ไม่มีunit นี้' };
+    const u = S.cards[a.uid]; if (!u) return { ok: false, why: 'ไม่มียูนิตนี้' };
     const cd = card(u.id);
     if (u.rested) return { ok: false, why: 'การ์ดถูกวางนอน (ใช้แอ็คแล้ว)' };
     if (!canStand(u.side, a.to.r)) return { ok: false, why: 'เข้าแถวหลังของศัตรูไม่ได้' };
-    if (S.cells[a.to.r][a.to.c].unit) return { ok: false, why: 'ช่องมีunit อื่นอยู่' };
+    if (S.cells[a.to.r][a.to.c].unit) return { ok: false, why: 'ช่องนั้นมีunit อื่นอยู่แล้ว' };
     if (!canReach(S, u, a.to)) return { ok: false, why: 'เส้นทางถูกบล็อก' };
     u.rested = true;
     S.cells[u.r][u.c].unit = null;
@@ -1026,7 +1026,7 @@ const Z = (function () {
     const freeStrike = canFreeAttack(S, attacker);
     if (!freeStrike) attacker.rested = true;
     const acd = card(attacker.id), dcd = card(def.id);
-    log(S, `⚔ [${acd.name}] → [${dcd.name}]${freeStrike ? ' (free attack · ยังตั้ง)' : ' (วางนอนเมื่อการเดิน)'}`, 'attack');
+    log(S, `⚔ [${acd.name}] → [${dcd.name}]${freeStrike ? ' (free attack · ยังตั้ง)' : ' (วางนอนเมื่อโจมตี)'}`, 'attack');
 
     /* 1) Defender's Counter works before Attack */
     runHook(S, def.side, def.uid, 'counter', {});
@@ -1216,22 +1216,22 @@ const Z = (function () {
     },
     move(S, side, uid, to) {
       if (S.active !== side) return { ok: false, why: 'ไม่ใช่เทิร์นของคุณ' };
-      const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบunit' };
+      const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบยูนิต' };
       if (!legalMoveCells(S, u).some(x => x.r === to.r && x.c === to.c)) return { ok: false, why: 'เดินไปช่องนั้นไม่ได้' };
       S.turnActions++;
       return openResponse(S, side, { kind: 'move' }, { kind: 'move', uid, to });
     },
     attack(S, side, uid, tgtUid) {
       if (S.active !== side) return { ok: false, why: 'ไม่ใช่เทิร์นของคุณ' };
-      const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบunit' };
-      if (u.rested && !canFreeAttack(S, u)) return { ok: false, why: 'ยูนิตนี้วางนอนไปแล้ว (โคงจ = ใช้แอเค็อเมื่อการเดิน)' };
+      const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบยูนิต' };
+      if (u.rested && !canFreeAttack(S, u)) return { ok: false, why: 'ยูนิตนี้วางนอนไปแล้ว (โจมตี = ใช้แอ็คของยูนิตแล้ววางนอน)' };
       if (!attackTargets(S, u).some(t => t.uid === tgtUid)) return { ok: false, why: 'เป้าหมายอยู่นอกระยะโจมตี' };
       S.turnActions++;
       return openResponse(S, side, { kind: 'attack', tgt: S.cards[tgtUid], attackerUid: uid }, { kind: 'attack', uid, tgtUid });
     },
     ability(S, side, uid) {
       if (S.active !== side) return { ok: false, why: 'ไม่ใช่เทิร์นของคุณ' };
-      const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบunit' };
+      const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบยูนิต' };
       const ab = (card(u.id).abilities || []).find(x => x.kw === 'Activate');
       if (!ab) return { ok: false, why: 'การ์ดใบนี้ไม่มี Activate' };
       if (ab.once && u.used['act']) return { ok: false, why: 'ใช้ไปแล้วในเทิร์นนี้' };

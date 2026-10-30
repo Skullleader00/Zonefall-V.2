@@ -115,7 +115,7 @@
   FX.oncePerTurn = (S, src) => {
     const u = src.uid && S.cards[src.uid]; if (!u) return;
     u.used = u.used || {};
-    if (u.used.onceTurn) { say(S, 'ใช้abilityนี้ได้ครั้งเดียว/เทิร์น (ใช้ไปแล้ว)', 'dim'); return 'stop'; }
+    if (u.used.onceTurn) { say(S, 'ใช้ ability นี้ได้ครั้งเดียว/เทิร์น (ใช้ไปแล้ว)', 'dim'); return 'stop'; }
     u.used.onceTurn = 1;
   };
   FX.pay = (S, src, op, ctx, ops, i) => {
@@ -152,7 +152,7 @@
     if (op.restPair) {
       const u = S.cards[src.uid]; if (u) { u.rested = true; an(S, { t: 'rest', uid: u.uid }); }
       const list = pool(S, src, 'ownBackRowReady');
-      if (!list.length) { say(S, 'ไม่มีunit แถวหลังให้วางนอนด้วย', 'dim'); return 'stop'; }
+      if (!list.length) { say(S, 'ไม่มียูนิตแถวหลังให้วางนอนด้วย', 'dim'); return 'stop'; }
       return pickFrom(S, src, op, list, 'เลือกอีก 1 ตัวในแถวหลังให้วางนอน', x => { x.rested = true; an(S, { t: 'rest', uid: x.uid }); });
     }
   };
@@ -167,7 +167,7 @@
     p.corePoints = d < 0 && p.corePoints >= floor ? Math.max(floor, p.corePoints + d) : Math.max(0, p.corePoints + d);
     an(S, { t: 'point', side: to, n: op.n, total: p.corePoints });
     say(S, (d >= 0 ? '+' : '') + d + ' Core Point → ' + p.deckName + ' (' + p.corePoints + '/' + R.corePointsToWin + ')', d >= 0 ? 'good' : 'bad');
-    /* V.25: เกีดขึ้น = อีกฝ้ายเกีด trigger check (engine จะผักเครา 1 ไบ/ตารน) */
+    /* V.25: Trigger Check เกิดเมื่ออีกฝ่ายได้แต้ม (engine จำกัด 1 ใบ/เทิร์น) */
     if (d > 0 && to !== src.side && op.trigger !== false) Z.triggerCheck(S, to);
     else if (d > 0 && to === src.side && op.trigger !== false) Z.triggerCheck(S, foeOf(to));
   };
@@ -208,7 +208,7 @@
   };
   FX.drawPerPower = (S, src, op) => {
     const n = Math.min(op.max || 2, mine(S, src.side, u => h().effCp(S, u) === op.value).length);
-    if (n > 0) { h().draw(S, src.side, n); an(S, { t: 'draw', side: src.side, n }); say(S, 'จั่ว ' + n + ' ใบ', 'good'); } else say(S, 'ไม่มีunit ที่ค่าพลังตรงกับเงื่อนไข', 'dim');
+    if (n > 0) { h().draw(S, src.side, n); an(S, { t: 'draw', side: src.side, n }); say(S, 'จั่ว ' + n + ' ใบ', 'good'); } else say(S, 'ไม่มียูนิตที่ค่าพลังตรงกับเงื่อนไข', 'dim');
   };
   FX.shiftCost = (S, src, op, ctx, ops, i) => {
     const u = S.cards[src.uid]; if (!u) return;
@@ -225,9 +225,9 @@
     if (!list.length) { say(S, 'ไม่มีเป้าหมาย', 'dim'); return; }
     list.forEach(u => {
       if (!u) return;
-      if (toReady && u.restLock === S.turnNo) { say(S, ' [⚑] ' + cdOf(u.id).name + ' ถูกจัด้งไม่กลับเจนตรงทีนนี้ (เครานั้น)', 'dim'); return; }
+      if (toReady && u.restLock === S.turnNo) { say(S, ' [⚑] ' + cdOf(u.id).name + ' ถูกล็อกไม่ให้ตั้งคืนในเทิร์นนี้', 'dim'); return; }
       u.rested = !toReady;
-      if (toReady && op && op.lockRestEndOfTurn) { u.restLock = S.turnNo; say(S, ' ⚑ ' + cdOf(u.id).name + ' ถูก set ไม่รัดกลับจนช่องทีน', 'info'); }
+      if (toReady && op && op.lockRestEndOfTurn) { u.restLock = S.turnNo; say(S, ' ⚑ ' + cdOf(u.id).name + ' ถูกล็อกไม่ให้ตั้งคืนจนจบเทิร์น', 'info'); }
       if (toReady) S.players[u.side].stats.readyByEffect++;
       an(S, { t: toReady ? 'ready' : 'rest', uid: u.uid });
     });
@@ -248,7 +248,7 @@
     if (op.to === 'self' || !op.to) { const u = S.cards[src.uid]; list = u ? [u] : []; }
     else if (op.to && op.to.indexOf('ask:') === 0) {
       const r = resolveTarget(S, src, op, ctx, ops, i, op.to.slice(4), op.prompt);
-      if (r.pause) return 'pause'; if (r.none) { say(S, 'ไม่มีunit ให้เคลื่อน', 'dim'); return; }
+      if (r.pause) return 'pause'; if (r.none) { say(S, 'ไม่มียูนิตให้เคลื่อน', 'dim'); return; }
       list = src.tgt ? [src.tgt] : [];
     } else list = src.tgt ? [src.tgt] : [];
     list.forEach(u => {
@@ -293,12 +293,12 @@
       src.eff = Object.assign({}, src.eff, { returnedColor: cdOf(u.id).color, returnedTribe: cdOf(u.id).tribe });
       say(S, '[' + cdOf(u.id).name + '] กลับขึ้นมือ', 'info');
     });
-    if (!list.length) say(S, 'ไม่มีunit ส่งกลับมือ', 'dim');
+    if (!list.length) say(S, 'ไม่มียูนิตส่งกลับมือ', 'dim');
   };
-  FX.noDestroy = (S, src, op) => { const u = (src.eff && S.cards[src.eff.target]) || src.tgt; if (!u) { say(S, 'ไม่มีunit ที่ถูกโจมตี', 'dim'); return; } u.noDestroyBattle = true; an(S, { t: 'buff', uid: u.uid, n: 0 }); say(S, '🛡 [' + cdOf(u.id).name + '] ไม่ถูกทำลายจากการต่อสู้ครั้งนี้', 'guard'); if (op.thenMoveBack) h().execStepMove(S, u, 'back', 1); };
+  FX.noDestroy = (S, src, op) => { const u = (src.eff && S.cards[src.eff.target]) || src.tgt; if (!u) { say(S, 'ไม่มียูนิตที่ถูกโจมตี', 'dim'); return; } u.noDestroyBattle = true; an(S, { t: 'buff', uid: u.uid, n: 0 }); say(S, '🛡 [' + cdOf(u.id).name + '] ไม่ถูกทำลายจากการต่อสู้ครั้งนี้', 'guard'); if (op.thenMoveBack) h().execStepMove(S, u, 'back', 1); };
   FX.protect = (S, src, op) => {
     const u = (src.eff && S.cards[src.eff.target]) || src.tgt;
-    if (!u) { say(S, 'ไม่มีunit ที่กำลังถูกโจมตี', 'dim'); return; }
+    if (!u) { say(S, 'ไม่มียูนิตที่กำลังถูกโจมตี', 'dim'); return; }
     if (op.buff) { u.battleCp = (u.battleCp || 0) + op.buff; an(S, { t: 'buff', uid: u.uid, n: op.buff }); }
     if (op.grantNoDestroy) { u.noDestroyBattle = true; if (op.thenMoveBack) h().execStepMove(S, u, 'back', 1); }
     say(S, '🛡 ปกป้อง [' + cdOf(u.id).name + ']' + (op.buff ? ' +' + op.buff.toLocaleString() + ' CP' : ''), 'guard');
@@ -306,10 +306,10 @@
   FX.perOwnedGreenTerrainBuff = (S, src, op, ctx, ops, i) => {
     const per = h().terrains(S, src.side).length + mine(S, src.side, u => cdOf(u.id).color === 'Green').length;
     const list = pool(S, src, 'battlingGreen');
-    if (!list.length) { say(S, 'ไม่มีunit เขียวในการต่อสู้', 'dim'); return; }
+    if (!list.length) { say(S, 'ไม่มียูนิตสีเขียวในการต่อสู้', 'dim'); return; }
     const go = u => { u.battleCp = (u.battleCp || 0) + (op.n || 1000) * Math.max(1, per); an(S, { t: 'buff', uid: u.uid, n: (op.n || 1000) * per }); say(S, '[' + cdOf(u.id).name + '] +' + ((op.n || 1000) * Math.max(1, per)).toLocaleString() + ' CP (Terrain+Green ' + per + ')', 'good'); };
     if (list.length === 1 || !h().isHuman(src.side)) return go(list[0]);
-    h().ask(S, { kind: 'target', title: 'เลือกunit เขียวของการต่อสู้นี้', uids: list.map(u => u.uid), side: src.side, auto: () => list[0].uid, resume: v => v && go(S.cards[v]) });
+    h().ask(S, { kind: 'target', title: 'เลือกยูนิตสีเขียวของการต่อสู้นี้', uids: list.map(u => u.uid), side: src.side, auto: () => list[0].uid, resume: v => v && go(S.cards[v]) });
     return 'pause';
   };
   FX.battleEffect = (S, src, op) => { S.battleOverride = S.battleOverride || {}; S.battleOverride[op.name] = src.side; say(S, 'ตั้งกติกาพิเศษให้การต่อสู้ครั้งนี้ (' + op.name + ')', 'guard'); };
@@ -389,7 +389,7 @@
     if (op.from === 'backRowReadyToRemove') {
       const list = mine(S, src.side, u => u.r === R.backRow[src.side] && !u.rested);
       const need = op.n || 1;
-      if (list.length < need && !op.allowLess) { say(S, 'ต้องการunit แถวหลังที่วางตั้ง ' + need + ' (มี ' + list.length + ')', 'dim'); return 'stop'; }
+      if (list.length < need && !op.allowLess) { say(S, 'ต้องการยูนิตแถวหลังที่ตั้งอยู่ ' + need + ' (มี ' + list.length + ')', 'dim'); return 'stop'; }
       const doTake = arr => {
         (arr || list).slice(0, need).forEach(u => { Hh.leaveField(S, u, op.to || 'remove'); Hh.fxq(S, { t: 'destroy', uid: u.uid, cardId: u.id }); });
         say(S, 'banish ' + Math.min(need, list.length) + ' ใบจากแถวหลัง → Removezone', 'bad');
@@ -462,7 +462,7 @@
   FX.ascendDeploy = (S, src, op, ctx, ops, i) => {
     const Hh = h(), u = S.cards[src.uid]; if (!u) return;
     const hosts = mine(S, src.side, x => x.uid !== u.uid && x.r === R.backRow[src.side] && cdOf(x.id).type === 'unit');
-    if (!hosts.length) { say(S, 'ไม่มีunit ให้ Ascend ทับ', 'dim'); return; }
+    if (!hosts.length) { say(S, 'ไม่มียูนิตให้ Ascend ทับ', 'dim'); return; }
     const go = host => {
       if (!host) return;
       if (op.refundColor && cdOf(host.id).color === op.refundColor) { S.players[src.side].flare = Math.min(99, S.players[src.side].flare + (cdOf(u.id).cost || 0)); say(S, 'สีตรง → คืน Flare ตาม Cost (' + (cdOf(u.id).cost || 0) + ')', 'good'); }
@@ -471,7 +471,7 @@
       say(S, '♛ Ascend ทับ [' + cdOf(host.id).name + '] (Fused ' + host.fused.length + ' · +1,000 CP)', 'good');
     };
     if (hosts.length === 1 || !Hh.isHuman(src.side)) return go(hosts[0]);
-    Hh.ask(S, { kind: 'target', title: 'เลือกunit วางทับ (Ascend)', uids: hosts.map(x => x.uid), side: src.side, auto: () => hosts[0].uid, resume: v => go(v && S.cards[v]) });
+    Hh.ask(S, { kind: 'target', title: 'เลือกยูนิตวางทับ (Ascend)', uids: hosts.map(x => x.uid), side: src.side, auto: () => hosts[0].uid, resume: v => go(v && S.cards[v]) });
     return 'pause';
   };
   FX.declareMatch = (S, src, op, ctx, ops, i) => {

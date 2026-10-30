@@ -2,6 +2,7 @@
    · โจมตี = วางนอน (rest) เหมือนการเดิน ไม่ใช้ Flare
    · เงื่อนไขบนการ์ด (Cost/สี/เผ่า/ชนิด/สถานะ) ต้องกรองกองเป้าหมาย
    · Trigger Check เปิด 1 ใบ/ครั้ง · ครั้งเดียวต่อฝ่ายต่อเทิร์น · เกิดเมื่ออีกฝ่ายได้แต้ม
+   · ใบที่ไม่มี [Trigger] → เจอแล้วเอาขึ้นมือเท่านั้น · ห้ามมีข้อความ ability ขึ้นต้นด้วย ":"
    · การลด Core Point ห้ามทำให้แต้ม ≥1 ตกลงเป็น 0
    · ไม่มี Extra Zone / Arcanum อีกต่อไป
    usage: node test/rules-v25.js                      */
@@ -90,6 +91,30 @@ const out = run(`
   S.players.p1.corePoints = 5;
   Z.fx(S, { side: 'p0', uid: null, cardId: 'sd01012' }, [{ op: 'foePoint', n: -4 }]);
   T('ลดเท่าที่กระทบจริง (5 −4 → 1)', S.players.p1.corePoints === 1, S.players.p1.corePoints);
+
+  /* ---------- 5 · ใบที่ไม่มี [Trigger] → Trigger Check ได้แค่เอาขึ้นมือ ---------- */
+  var noT = CARDS.filter(function (c) {
+    return !(c.abilities || []).some(function (a) { return /^trigger$/i.test(String(a.kw)); });
+  })[0];
+  var nTrig = CARDS.filter(function (c) {
+    return (c.abilities || []).some(function (a) { return /^trigger$/i.test(String(a.kw)); });
+  }).length;
+  T('มีใบที่พิมพ์ [Trigger] ' + nTrig + ' ใบ ที่เหลือไม่มี (ตามมาสเตอร์เด็ค)', nTrig > 0 && nTrig < CARDS.length, nTrig + '/' + CARDS.length);
+
+  S = Z.init({ seed: 71, p0deck: 'sylvan', p1deck: 'machina', humanSide: 'p9' });
+  var pp = S.players.p0;
+  pp.deck = [noT.id].concat(pp.deck);
+  var hB = pp.hand.length, oB = pp.outzone.length, rB = pp.remove.length;
+  Z.triggerCheck(S, 'p0');
+  T('ใบไม่มี [Trigger] (' + noT.file + ') → ขึ้นมือเท่านั้น (ไม่เข้า Out/Remove)',
+    pp.hand.length === hB + 1 && pp.outzone.length === oB && pp.remove.length === rB,
+    'hand +' + (pp.hand.length - hB) + ' out +' + (pp.outzone.length - oB) + ' rem +' + (pp.remove.length - rB));
+  T('ใบไม่มี [Trigger] → ไม่ถามใช้เอฟเฟกต์ (ไม่มี uiAsk ค้าง)', !S.uiAsk, S.uiAsk ? S.uiAsk.kind : 'none');
+
+  var lead = CARDS.reduce(function (n, c) {
+    return n + (c.abilities || []).filter(function (a) { return String(a.text || '').trim()[0] === ':'; }).length;
+  }, 0);
+  T('ข้อความ ability ไม่มีใบใดขึ้นต้นด้วย ":" (ข้อมูลสะอาดหลัง OCR)', lead === 0, lead + ' จุด');
 
   return { res: res, ok: ok };
 `);
