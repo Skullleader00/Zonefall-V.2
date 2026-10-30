@@ -1,0 +1,23 @@
+{
+  "name": "Zonefall · Rift Lobby",
+  "short_name": "Zonefall",
+  "description": "ห้องโถงเว็บของการ์ดเกม Zonefall (rulebook Dev V.24) — คลังการ์ดจริง 52 ใบ ร้านค้า แผงเด็คพร้อม deckcheck อีเวนต์ แรงก์ และสนามที่เรียก engine จริง",
+  "start_url": "./index.html?menu=lobby",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#040706",
+  "theme_color": "#070a09",
+  "lang": "th",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "อีเวนต์ / Events", "url": "./index.html?menu=events" },
+    { "name": "ลงสนาม / Match", "url": "./index.html?menu=battle" },
+    { "name": "คลังการ์ด / Vault", "url": "./index.html?menu=collection" },
+    { "name": "แผงเด็ค / Deck board", "url": "./index.html?menu=decks" }
+  ]
+}

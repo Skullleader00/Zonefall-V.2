@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a09">
+<meta name="description" content="Zonefall · Rift Lobby — ห้องโถงเว็บของการ์ดเกม Zonefall (rulebook Dev V.24): คลังการ์ดจริง 52 ใบ ร้านค้าแผงเด็ค อีเวนต์ แรงก์ และสนามที่เรียก engine จริง">
+<title>Zonefall · Rift Lobby</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zonefall">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="css/lobby.css?v=1793365332">
+</head>
+<body class="page-lobby" data-page="lobby">
+
+<!-- ══ BOOT ══ -->
+<div id="boot" role="status" aria-live="polite">
+  <div class="boot-rift"></div>
+  <svg class="boot-mark" viewBox="0 0 120 120" aria-hidden="true"><path d="M22 18h76L60 60l38 42H22l38-42Z"/></svg>
+  <div class="boot-title">ZONEFALL</div>
+  <div class="boot-sub">RIFT LOBBY · RULEBOOK DEV V.24</div>
+  <div class="boot-bar"><i id="boot-bar-fill"></i></div>
+  <div class="boot-log" id="boot-log">กำลังโหลดการ์ด…</div>
+</div>
+
+<!-- ══ TOPBAR ══ -->
+<header class="topbar">
+  <a class="back" href="?menu=lobby" id="back-home" aria-label="หน้าแรก Zonefall"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg></a>
+  <svg class="logo-mark" viewBox="0 0 120 120" aria-hidden="true"><path d="M22 18h76L60 60l38 42H22l38-42Z"/></svg>
+  <span class="logo-word">ZONEFALL</span>
+  <span class="edition">RIFT LOBBY</span>
+
+  <nav class="header-shortcuts" aria-label="เมนูหลัก">
+    <button data-tab="lobby"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v11h-6v-8H9v8H3Z"/></svg><span>หน้าหลัก</span></button>
+    <button data-tab="events"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM8 3v5M16 3v5M4 11h16"/></svg><span>อีเวนต์</span></button>
+    <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 3h2l3 12h11l3-9H6M9 20h.01M18 20h.01"/></svg><span>ร้านค้า</span></button>
+    <button data-tab="collection"><svg viewBox="0 0 24 24"><path d="M7 3h13v17H7zM3 7v16h13"/></svg><span>คลังการ์ด</span></button>
+    <button data-tab="decks"><svg viewBox="0 0 24 24"><path d="M4 4h12v15H4zM8 2h12v15"/></svg><span>เด็ค</span></button>
+    <button data-tab="battle"><svg viewBox="0 0 24 24"><path d="M14 3l7 7-4 4-3-3-7 7-4-4 7-7-3-3Z"/></svg><span>ลงสนาม</span></button>
+    <button data-tab="customization"><svg viewBox="0 0 24 24"><path d="M3 4h18v14H3zM8 22h8M12 18v4"/></svg><span>ปรับแต่ง</span></button>
+    <button id="install-app" type="button" aria-controls="install-help"><svg viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span>ติดตั้ง</span></button>
+  </nav>
+
+  <div class="header-right">
+    <span class="coin-purse" id="coin-purse" hidden><b id="coin-value">0</b><i>COIN</i></span>
+    <!-- ใส่ลิงก์เซิร์ฟเวอร์ดิสคอร์ดจริงของคุณตรงนี้ / replace with your real invite -->
+    <a class="header-discord" href="https://discord.gg/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M5 4h14a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H9l-5 3v-3a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z"/><path d="M7 10h.01M12 10h.01M17 10h.01M8 14h8"/></svg><span>เข้าดิสคอร์ด</span></a>
+    <button id="catalog-open">คาตาล็อก</button>
+    <button id="about-open">เกี่ยวกับเรา</button>
+    <button id="account-button">เข้าสู่ระบบ</button>
+  </div>
+
+  <div class="language" aria-label="Language"><button id="th" type="button">TH</button><button id="en" type="button">EN</button></div>
+</header>
+
+<!-- ══ TAB STRIP ══ -->
+<nav class="tabs" aria-label="Zonefall">
+  <button data-tab="lobby"></button><button data-tab="events"></button><button data-tab="shop"></button>
+  <button data-tab="collection"></button><button data-tab="decks"></button><button data-tab="battle"></button>
+  <button data-tab="watch"></button><button data-tab="ranked"></button><button data-tab="customization"></button>
+  <button data-tab="profile"></button><button data-tab="banlist"></button><button data-tab="about"></button>
+</nav>
+
+<main id="content"><p class="loading-line" role="status">กำลังโหลดการ์ด…</p></main>
+
+<div id="toast" role="status"></div>
+<div id="levelup-fx" hidden><span></span></div>
+
+<!-- ══ DIALOGS ══ -->
+<dialog id="redeem-dialog" aria-labelledby="redeem-title">
+  <div class="dialog-head"><span>REDEEM CODE</span><button class="close" data-close-dialog aria-label="ปิด">×</button></div>
+  <form id="redeem-form" class="account-form">
+    <h2 id="redeem-title">ใส่โค้ดรับรางวัล</h2>
+    <p>รางวัลเข้าบัญชีทันที · แต่ละโค้ดใช้ได้ครั้งเดียวต่อบัญชี</p>
+    <label for="redeem-code">โค้ด / Code<input id="redeem-code" name="code" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="ZONEFALL-V24"></label>
+    <button class="primary" type="submit">รับรางวัล / Redeem</button>
+    <p id="redeem-status" role="status" aria-live="polite"></p>
+  </form>
+</dialog>
+
+<dialog id="account-dialog" aria-labelledby="account-title">
+  <div class="dialog-head"><span>PLAYER ACCOUNT</span><button class="close" data-close-dialog aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <form id="account-form" class="account-form">
+    <h2 id="account-title">เข้าสู่ RIFT LOBBY</h2>
+    <p>สมัครครั้งแรกได้คลังเริ่มต้น 3 ใบ/ชื่อ (52 ใบจริง) + 20,000 Coin · เด็คที่คุณสร้างจะ inject เข้า dropdown ของ engine จริง</p>
+    <label>ชื่อบัญชี<input name="username" minlength="3" maxlength="24" autocomplete="username" required placeholder="A–Z / 0–9 / . _ -"></label>
+    <label>รหัสผ่าน<input name="password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required></label>
+    <p class="net-note">เดโมเก็บทุกอย่างใน localStorage ของเครื่องคุณ (ไม่มี backend) · อย่าใช้รหัสผ่านจริง</p>
+    <div class="actions"><button value="login" class="primary" type="submit">เข้าสู่ระบบ</button><button value="register" type="submit">สร้างบัญชี</button></div>
+    <p id="account-error" class="room-error" role="alert"></p>
+  </form>
+</dialog>
+
+<dialog id="profile-dialog">
+  <div class="dialog-head"><span id="signed-in-name"></span><button class="close" data-close-dialog aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <div class="account-form">
+    <p>คลัง เด็ค และการปรับแต่งผูกกับบัญชีนี้ในเครื่องคุณ · ผลการแข่งอ่านจาก <code>zf_tally</code> ที่ engine เขียน</p>
+    <div class="stat-grid" id="profile-mini"></div>
+    <button id="logout-account">ออกจากบัญชี</button>
+  </div>
+</dialog>
+
+<dialog id="friend-room">
+  <div class="dialog-head"><span id="room-title">ROOM · นัดแข่ง</span><button class="close" id="close-room" aria-label="Close"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <form class="room-form" id="room-form">
+    <label>ชื่อผู้เล่น / Player name<input id="player-name" maxlength="24" required autocomplete="nickname"></label>
+    <label class="room-watch-toggle"><span>เปิดให้รับชม / Allow spectators<small>ห้องจะโผล่ในแท็บ Watch ของเครื่องนี้</small></span><input id="room-allow-watch" type="checkbox" role="switch" checked></label>
+    <button id="create-room" class="primary" type="submit">สร้างห้อง / Create room</button>
+    <label class="split-line">รหัสห้องของเพื่อน / Room code<input id="room-code" maxlength="6" placeholder="ZX4K21" autocomplete="off"></label>
+    <button id="join-room" type="button">เข้าห้อง / Join room</button>
+    <p class="net-note">engine ทำงานบนเครื่องคุณ · ตอนนี้ห้องคือ “นัดแข่ง” ที่ lobby จัดไว้ ยังไม่ใช่ matchmaking realtime</p>
+    <p id="room-error" class="room-error" role="alert"></p>
+  </form>
+</dialog>
+
+<dialog id="pack-catalog" aria-labelledby="pack-catalog-title">
+  <div class="dialog-head"><span id="pack-catalog-title"></span><button class="close" data-close-dialog aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <p id="pack-catalog-note"></p>
+  <div class="pack-catalog-toolbar" aria-label="filter"></div>
+  <div class="pack-catalog-list"></div>
+</dialog>
+
+<dialog id="card-detail" aria-labelledby="detail-title">
+  <div class="dialog-head"><span>Z SERIES / CARD INFO</span><div class="language"><button data-language="th">TH</button><button data-language="en">EN</button></div><button class="close" id="close-detail" aria-label="Close"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <div id="detail-content"></div>
+</dialog>
+
+<dialog id="deck-share-dialog" aria-labelledby="share-title">
+  <div class="dialog-head"><span>SHARE DECK · แผ่เด็ค</span><button class="close" data-close-dialog aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <div class="share-dialog-body">
+    <div class="share-header-bar">
+      <div class="share-deck-info"><h2 id="share-title">แชร์เด็ค</h2><div id="share-deck-meta" class="share-deck-meta"></div></div>
+      <div class="share-code-box">
+        <span class="share-code-label">รหัสแชร์เด็ค</span>
+        <div class="share-code-pill"><div class="share-code" id="share-code-display">------</div><button id="copy-share-code" class="primary" type="button"><span>คัดลอกรหัส</span></button></div>
+        <p class="muted share-expiry-text">ส่งรหัสนี้ให้เพื่อน · ใช้ได้ 30 วัน (decks ที่ import จะ inject เข้า engine ได้ทันที)</p>
+      </div>
+    </div>
+    <div class="share-board-container" id="share-deck-board"></div>
+  </div>
+</dialog>
+
+<dialog id="deck-import-dialog" aria-labelledby="import-title">
+  <div class="dialog-head"><span>IMPORT DECK</span><button class="close" data-close-dialog aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <form id="deck-import-form" class="account-form">
+    <h2 id="import-title">นำเข้าเด็ค</h2>
+    <p class="muted">ใส่รหัสแชร์ 8 ตัว หรือวางรายชื่อ · 1 บรรทัด = <code>3x SD01-007</code> · บรรทัด <code>extra</code> ต่อไปคือ Extra Zone</p>
+    <input id="import-code-input" class="codein" maxlength="4000" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="9V1HJ8L4 / 3x SD01-007" required>
+    <p class="warn">นำเข้าได้แม้บางใบยังไม่มีในคลัง · deckcheck จะแจ้งข้อที่ยังผิด</p>
+    <p id="import-error" class="room-error" role="alert" style="display:none"></p>
+    <button class="primary" type="submit">นำเข้า</button>
+  </form>
+</dialog>
+
+<dialog id="install-help" aria-labelledby="install-title">
+  <img src="icons/icon-192.png" alt="">
+  <h2 id="install-title">ติดตั้ง Zonefall เป็นแอป</h2>
+  <p></p>
+  <ol></ol>
+  <button type="button">ปิด</button>
+</dialog>
+
+<script src="game/js/data.js?v=1793365332"></script>
+<script src="data.js?v=1793365332" defer></script>
+<script src="battle.js?v=1793365332" defer></script>
+<script src="app.js?v=1793365332" defer></script>
+</body>
+</html>
