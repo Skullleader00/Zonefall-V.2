@@ -94,7 +94,7 @@ const ZFStage = (() => {
       bar.innerHTML = Object.entries(cnt).map(([k, v]) => `<i style="flex:${v};background:${ZF.tone(k)}"></i>`).join('');
       $('#railMatch').appendChild(bar); }
     const ck = deckCheck(mine);
-    $('#railDeck').innerHTML = `<b>${esc(mine.name)}</b><span>${deckSize(mine)} main + ${deckExtraSize(mine)} extra · <i style="color:${ZF.tone(ck.primary)}">${esc(ck.primary)} ${ck.stat.pct}%</i> · [P] ${ck.prot}</span>` +
+    $('#railDeck').innerHTML = `<b>${esc(mine.name)}</b><span>${deckSize(mine)} ${T('ใบในเด็ค', 'cards')} · <i style="color:${ZF.tone(ck.primary)}">${esc(ck.primary)} ${ck.stat.pct}%</i> · [P] ${ck.prot}</span>` +
       `<div class="mini-colors">${Object.entries(ck.stat.c).map(([k, v]) => `<i style="flex:${v};background:${ZF.tone(k)}"></i>`).join('')}</div>` +
       `<span class="muted">${T('เด็คนี้ถูก inject เข้า DECKS ของ engine แล้ว (คีย์ LB:' + mine.id + ')', 'this deck is injected into the engine DECKS map as LB:' + mine.id)}</span>`;
   }

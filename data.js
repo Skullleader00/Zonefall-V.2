@@ -5,7 +5,7 @@
    แล้วเพิ่มเฉพาะข้อมูลที่ lobby ต้องใช้: เกรดสำหรับร้านค้า, อีเวนต์,
    cosmetic, โค้ดรับรางวัล, โควตา/ข้อจำกัดแรงก์, และโน้ตสมดุลที่ค้างอยู่
    ═══════════════════════════════════════════════════════════════ */
-const ZF = { ver: '1.1', series: 'Z SERIES · DEV V.24', game: 'game/index.html' };
+const ZF = { ver: '1.2', series: 'Z SERIES · DEV V.25', game: 'game/index.html' };
 
 /* ── faction = สีประจำเด็ค (ไอคอนใช้ไฟล์จริงจากเกม) ───────────── */
 ZF.factions = [
@@ -16,8 +16,8 @@ ZF.factions = [
   { id: 'Purple', icon: 'nyx-horizon',   en: 'NYX HORIZON · VOID',   th: 'นิกซ์ ฮอไรซัน · สูญตา',  hue: 'Witch · Vampire · Esper · Void' },
   { id: 'Colorless',icon:'aegis',         en: 'OUTLAND · NEUTRAL',    th: 'เอาแลนด์ · กลาง',        hue: 'Protection · Generic' }
 ];
-ZF.tones = () => ({ Yellow: '#f2c744', Blue: '#4ea8ff', Red: '#ff6a4d', Green: '#5fd66f', Purple: '#b48cff', Colorless: '#a8b6d4' });
-ZF.tone = c => (COLORS[c] || { tone: '#a8b6d4' }).tone;
+ZF.tones = () => ({ Yellow: '#ffce26', Blue: '#1fa8ff', Red: '#d8262c', Green: '#6ec93f', Purple: '#a94bd8', Colorless: '#9fb0cc' });
+ZF.tone = c => ZF.tones()[c] || (COLORS[c] || { tone: '#9fb0cc' }).tone;
 ZF.fac = c => ZF.factions.find(f => f.id === c) || ZF.factions[5];
 
 /* ── เกรด = ใช้เฉพาะระบบซอง/คลังของ lobby (ไม่ใช่ rarity บนพิมพ์) ─ */
@@ -53,7 +53,7 @@ ZF.events = [
     blurb: { en: 'Solo vs AI premier on the shipped engine (52 real cards, Arcanum disabled). Best of 3, same deck list each game.',
             th: 'แข่ง Solo vs AI บนเอนจินจริง (การ์ด 52 ใบ, ปิด Arcanum ตามคำสั่ง) · Bo3 ใช้เด็คเดิมทุกเกม' },
     date: '2026-11-08T14:00', venue: 'Online · PWA client', fee: 1500, prize: 120000, format: 'BO3 · 7.Core-Point',
-    slots: { used: 186, cap: 256 }, restrict: 'Dev V.24 quota · no rework cards',
+    slots: { used: 186, cap: 256 }, restrict: 'Dev V.25 quota',
     rules: { en: 'Deck 40–60 · [Protection] ≤6 · main colour ≥50% · one secondary colour · Extra Zone main colour only.',
             th: 'เด็ค 40–60 ใบ · [Protection] ≤6 · สีหลัก ≥50% · คู่สีรอง 1 สี · Extra Zone ต้องสีหลักเท่านั้น' },
     prizes: [{ place: '1st', coins: 60000, extra: { en: 'Foil alt “Diomedium, Hero of the Celestial Realm”', th: 'ฟอยล์ alt “Diomedium, Hero of the Celestial Realm”' } },
@@ -111,7 +111,7 @@ ZF.ban = [
 
 /* ── known open items (จาก README ของโปรเจกต์) ────────────────── */
 ZF.openIssues = [
-  { t: { en: 'First-player advantage', th: 'ฝั่งเริ่มก่อนได้เปรียบ' }, d: { en: 'Mirror win rate ≈ 78–83% for the player who moves first; the rulebook “second player skips the first draw” makes it worse. Three fixes under test in EV-02.', th: 'ใน mirror ฝั่งเริ่มก่อนชนะราว 78–83% และกฎ “ฝั่งหลังไม่จั่วเทิร์นแรก” ซ้ำเติมอีก · กำลังทดสอบ 3 วิธีในอีเวนต์ EV-02' } },
+  { t: { en: 'First-player advantage', th: 'ฝ้างเริ่มก่อนได้พร่อม' }, d: { en: 'Measured again on V.25 (attack = rest): the first mover wins about 65% of 100 AI-vs-AI games (0 errors) — improved from 78-83% on V.24, still above a fair 50%. Three handicaps remain under test in EV-02.', th: 'วัดชาตั่อเจจก V.25 (โคงจ = วางนอน): ฝ้างเริ่มก่อนชนประมาถปรับเฉียี 65% จาก 100 คู AI-vs-AI (0 error) — ดีขึ้นจาก 78-83% ของ V.24 แต่ยังเกิน 50% · ยกตัด 3 วิธีในอีเวงต์ EV-02' } },
   { t: { en: 'SD04 above SD01', th: 'เด็ค SD04 เหนือกว่า SD01' }, d: { en: 'Cross-set games still favour the Blue Machina plan. Balance owner decision pending.', th: 'เกมข้ามชุดเด็คน้ำเงิน Machina ยังเหนือกว่า · รอเจ้าของเกมตัดสินใจ' } },
   { t: { en: 'Auto-built demo decks', th: 'เด็คตัวอย่างที่ระบบประกอบให้' }, d: { en: 'Official DECKS are generated lists, not necessarily what the team plays. Submit your list through the deck board and it appears in the engine picker.', th: 'DECKS ทางการเป็นรายการที่ระบบเรียงให้ อาจไม่ใช่เด็คที่ทีมใช้จริง · ส่งเด็คผ่านแผงเด็คแล้วจะโผล่ใน dropdown ของเอนจินจริง' } },
   { t: { en: 'handCostReduce counters', th: 'ตัวนับของ handCostReduce' }, d: { en: 'Agrony / Ahenla count “terrain destroyed this turn”. Confirm against the paper rulebook wording.', th: 'Agrony / Ahenal นับ “Terrain ที่ถูกทำลายในเทิร์นนี้” · โปรดยืนยันถ้อยคำจากรulebook จริง' } }
@@ -154,12 +154,12 @@ ZF.codes = {
 ZF.rules = [
   { h: { en: 'Objective', th: 'เป้าหมาย' }, b: { en: 'Collect 7 Core Point. Each unit you control standing in the Core Zone (row 3) counts 1 at your End Phase. A player who cannot draw also loses.', th: 'เก็บ Core Point ให้ครบ 7 · นับยูนิตที่คุณครองใน Core Zone (แถว 3) ตอน End Phase ใบละ 1 · และถ้าฝ่ายตรง จั่วไม่ได้ก็แพ้ทันที' } },
   { h: { en: 'Board · 5 rows × 3 columns', th: 'สนาม · 5 แถว × 3 ช่อง' }, b: { en: 'Your back row (5) is where units/commands enter; row 4 is your front line; row 3 is the shared Core Zone; rows 2–1 belong to the opponent. Units may not enter the enemy back row. Terrain does not block movement.', th: 'แถวหลังของคุณ (5) ใช้ลงยูนิต/Command · แถว 4 เป็นแนวหน้า · แถว 3 คือ Core Zone กลาง · แถว 2–1 เป็นฝั่งศัตรู · ยูนิตห้ามเข้าแถวหลังศัตรู · Terrain ไม่บล็อกทางเดิน' } },
-  { h: { en: 'Flare', th: 'Flare' }, b: { en: 'Start at 3 Flare, +1 on each of your turns, ceiling 8. It does not carry over. Attacks cost 1 Flare; some cards give free attacks or reduce cost.', th: 'เริ่ม 3 Flare แล้ว +1 ทุกเทิร์นของคุณจนถึง 8 · ไม่สะสมข้ามเทิร์น · โจมตีใช้ 1 Flare · บางใบทำให้โจมตีฟรีหรือลดคอสต์' } },
+  { h: { en: 'Flare & actions', th: 'Flare และแอ็ค' }, b: { en: 'Start at 3 Flare, +1 each of your turns up to 8; nothing carries over. Flare pays for deploys, casts and [Activate] costs. Attacking costs NO Flare — it uses the unit’s action and Rests it, exactly like moving.', th: 'เริ่ม 3 Flare +1 ต่อเทิร์นของคุณจนถึง 8 ไม่สะสมข้ามเทิร์น · Flare ใช้สำหรับลงการ์ด ร่าย Command และ [Activate] · <b>การโจมตีไม่ใช้ Flare</b> แต่กินแอ็คของยูนิตแล้ววางนอน (rest) เหมือนการเดิน 1 ช่อง' } },
   { h: { en: 'One action per unit · persistent power', th: '1 แอ็คต่อยูนิิต · พลังค้าง' }, b: { en: 'A unit does one thing per turn (move 1 space free, attack, or an [Action]/[Activate] ability). Combat subtracts attacker CP from defender CP; at 0 the unit is Outzoned and the attacker pays nothing. Power resets at the start of the turn.', th: 'ยูนิต 1 ตัวทำอะไร 1 อย่างต่อเทิร์น (เดิน 1 ช่องฟรี / โจมตี / [Action]·[Activate]) · การต่อสู้เอา CP ผู้โจมตีไปลบ CP ผู้ป้องกัน เหลือ 0 = Outzone โดยผู้โจมตีไม่เสียพลัง · พลังรีเซ็ตต้นเทิร์น' } },
   { h: { en: 'Declare → Response window', th: 'หน้าต่างประกาศ → ตอบโต้' }, b: { en: 'Every action opens one response window for the opponent. [Quick-Cast] / [Counter] cards in hand (such as Shield Guard, Barrier, Null Magic) can be paid there; unit [Counter] triggers before [Attack]. No chains.', th: 'ทุกแอ็คเปิดหน้าต่างให้อีกฝ่ายตอบโต้ 1 ครั้ง · การ์ด [Quick-Cast]/[Counter] ในมือ (Shield Guard, Barrier, Null Magic) ใช้ตรงนั้นได้ · [Counter] ของยูนิตทำงานก่อน [Attack] · ไม่มี chain' } },
   { h: { en: 'End Phase · Trigger Check', th: 'End Phase · Trigger Check' }, b: { en: 'Count Core Point → opponent Trigger Check (the top card rises with a flash + buzz and its owner chooses: use the effect or keep it in hand) → specified Terrain fades → check 7 points → pass the turn and repeat.', th: 'นับ Core Point →ฝั่งตรงข้าม Trigger Check (การ์ดบนสุดเด้งขึ้น + สั่นสั้น ๆ เจ้าของเลือก “ใช้เอฟเฟกต์” หรือ “เก็บขึ้นมือ”) → Terrain ที่ระบุสลาย → เช็ค 7 แต้ม → ส่งเทิร์น' } },
   { h: { en: 'Field quotas & hand', th: 'โควตาบนสนามและมือ' }, b: { en: 'Units ≤ 4 on the field · Terrain ≤ 1 (cards marked multiTerrain such as the Sylvan pair don’t consume it) · a unit may be placed over a Terrain space · hand ≤ 10 (excess is Removezoned) · Outzone / Removezone / Extra Zone are all public.', th: 'ยูนิต ≤ 4 · Terrain ≤ 1 (ใบที่ระบุ multiTerrain เช่นคู่ Sylvan ไม่กินโควตา) · ยูนิตวางทับช่องที่มี Terrain ได้ · มือ ≤ 10 (เกิน → Removezone) · Outzone / Removezone / Extra Zone เปิดดูได้หมด' } },
-  { h: { en: 'Deck construction (checked live)', th: 'การจัดเด็ค (มีตัวตรวจ)' }, b: { en: '40–60 cards in the main deck · ≤3 copies per name · main colour ≥ 50% of the list · at most one secondary colour · [Protection] cards ≤ 6 · Extra Zone ≤ 5 and only main colour / Colorless.', th: 'เด็คหลัก 40–60 ใบ · ซ้ำชื่อละ ≤3 · สีหลัก ≥ ครึ่งของเด็ค · คู่สีรองได้ 1 สี · [Protection] ≤ 6 · Extra Zone ≤ 5 และต้องเป็นสีหลัก/Colorless เท่านั้น' } }
+  { h: { en: 'Deck construction (checked live)', th: 'การจัดเด็ค (มีตัวตรวจ)' }, b: { en: '40–60 cards · ≤3 copies per name · main colour ≥ 50% · at most ONE secondary colour · [Protection] ≤ 6 · no Extra Zone.', th: 'เด็ค 40–60 ใบ · ซ้ำชื่อละ ≤3 · สีหลัก ≥ ครึ่ง · มีคู่สีรองได้ 1 สี · [Protection] ≤ 6 · <b>ไม่มีการ์ด Extra Zone</b>' } }
 ];
 ZF.keywords = {
   'On Play': 'เมื่อลงสนาม (Deploy)', 'Activate': 'กดใช้ (มีต้นทุน)', 'Cont': 'ผลต่อเนื่องขณะอยู่บนสนาม',

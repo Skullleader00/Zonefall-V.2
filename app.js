@@ -102,10 +102,8 @@ function deckCheck(d) {
   if (st.secondaries.length > 1) errs.push(T('คู่สีรองได้ 1 สี พบ ' + st.secondaries.length, `${st.secondaries.length} secondary colours (max 1): ${st.secondaries.join(', ')}`));
   const prot = deckMain(d).filter(c => c.protection).reduce((a, c) => a + nOf(d, c.id), 0);
   if (prot > R.protectionLimit) errs.push(T(`[Protection] ${prot} ใบ เกินโควตา ${R.protectionLimit}`, `[Protection] ${prot} > ${R.protectionLimit}`));
-  if (es > R.extraZoneMax) errs.push(T(`Extra Zone ${es} ใบ เกิน ${R.extraZoneMax}`, `Extra Zone ${es} > ${R.extraZoneMax}`));
-  const badExtra = deckExtra(d).filter(c => c.color !== st.primary && c.color !== 'Colorless');
-  if (badExtra.length) errs.push(T('Extra Zone ต้องเป็นสีหลัก/Colorless พบ: ' + [...new Set(badExtra.map(c => c.color))].join(', '),
-    `Extra Zone must be ${st.primary}/Colorless, found ${[...new Set(badExtra.map(c => c.color))].join(', ')}`));
+  const legacy = deckExtraSize(d);
+  if (legacy) warn.push(T(`V.25 ไม่มี Extra Zone แล้ว — ไม่มานับ ${legacy} ใบ`, `no Extra Zone in V.25 — ${legacy} card(s) ignored`));
   const banned = d.main.filter(x => { const b = ZF.ban.find(z => z.id === x.id); return b && x.n > b.lim; });
   banned.forEach(x => warn.push(`${x.id} ×${x.n} → max ${ZF.ban.find(b => b.id === x.id).lim} (${T('แรงก์/อีเวนต์', 'ranked & events')})`));
   const units = deckMain(d).filter(c => c.type === 'unit').length, terr = deckMain(d).filter(c => c.type === 'terrain').length;
@@ -140,7 +138,7 @@ function syncLobbyDecks() {
   (S.prof?.decks || []).forEach(d => {
     if (d.official) return;
     const e = expand(d); const st = colorStat(d);
-    all[d.id] = { name: d.name, color: st.primary || d.color || 'Colorless', main: e.main, extra: e.extra, at: Date.now() };
+    all[d.id] = { name: d.name, color: st.primary || d.color || 'Colorless', main: e.main, extra: [], at: Date.now() };
   });
   try { localStorage.setItem(LSDECK, JSON.stringify(all)); } catch (e) { /* quota */ }
 }
@@ -198,7 +196,7 @@ function deckToText(d, fmt) {
   const head = ['# ' + d.name, '# Zonefall ' + ZF.series + ' · main ' + deckSize(d) + ' · extra ' + deckExtraSize(d), ''];
   const group = (arr) => arr.slice().sort((a, b) => (CARD(b.id)?.cost || 0) - (CARD(a.id)?.cost || 0) || CARD(a.id).file.localeCompare(CARD(b.id).file))
     .map(x => `${x.n}x ${CARD(x.id)?.file || x.id}  ${CARD(x.id)?.name || '?'}`);
-  return head.concat(group(d.main), (d.extra || []).length ? ['extra'].concat(group(d.extra)) : []).join('\n');
+  return head.concat(group(d.main)).join('\n');
 }
 
 /* ── card renderer (ใช้ภาพสแกนจริง) ──────────────────────────── */
@@ -367,7 +365,7 @@ function vLobby(m) {
   const ol = el('ol', 'flow');
   [T('สมัครบัญชี · รับ 20,000 Coin คลังเริ่มต้น 3 ใบ/ชื่อ', 'Register · 20,000 Coin and 3 copies of every real card'),
    T('เล็งกติกา: Core Zone (แถว 3) คือที่ทำคะแนน ใบที่ครองตอน End Phase นับใบละ 1', 'Learn the loop: the Core Zone (row 3) is where you score, 1 point per unit at End Phase'),
-   T('จัดเด็ค 40–60 ใบบนแผงเด็ค · deckcheck จะตรวจสีหลัก/คู่สี/[Protection]/Extra Zone', 'Build 40–60 on the deck board · deckcheck validates colour share, [Protection] and Extra Zone'),
+   T('จัดเด็ค 40–60 ใบบนแผงเด็ค · deckcheck ตรวจสีหลัก/คู่สี/[Protection] ให้เอง', 'Build 40–60 on the deck board · deckcheck validates colour share and [Protection]'),
    T('กด “ส่งเข้าสนาม” เด็คจะไปอยู่ใน dropdown ของ engine จริงทันที', 'Hit “Send to engine” and the deck shows up in the real game picker'),
    T('ชนะใน engine → lobby อ่านค่า zf_tally แล้วจ่าย Coin/RP ให้อัตโนมัติ', 'Win in the engine → the lobby reads zf_tally and pays Coin/RP automatically')]
     .forEach(t => ol.appendChild(el('li', null, t)));
@@ -662,7 +660,7 @@ function vDecks(m) {
   const sw = el('div', 'deck-switch');
   p.decks.forEach(d => { const ck = deckCheck(d);
     const b = el('button', 'chip' + (d.id === activeDeck().id ? ' on' : ''));
-    b.innerHTML = `${esc(d.name)} <span class="num ${ck.ok ? 'good' : 'bad'}">${deckSize(d)}+${deckExtraSize(d)}</span>`;
+    b.innerHTML = `${esc(d.name)} <span class="num ${ck.ok ? 'good' : 'bad'}">${deckSize(d)} ${T('ใบ', 'cards')}</span>`;
     b.addEventListener('click', () => { p.activeDeck = d.id; editingDeck = d.id; save(); render(); }); sw.appendChild(b); });
   const del = btnX('✕ ' + T('ลบ', 'delete'), () => { if (!confirm(T('ลบเด็คนี้?', 'delete this deck?'))) return;
     p.decks = p.decks.filter(x => x.id !== activeDeck().id); p.activeDeck = p.decks[0]?.id; editingDeck = null; save(); render(); }, 'ghost');
@@ -676,7 +674,7 @@ function vDecks(m) {
   const left = el('div');
   const stat = el('div', 'panel hi');
   stat.innerHTML = `<h3>${esc(d.name)}<small>${T('สีหลัก', 'primary')} <b style="color:${ZF.tone(ck.primary || 'Colorless')}">${esc(ck.primary || '—')} ${ck.stat.pct}%</b> · ${T('คู่สี', 'secondary')}: ${ck.stat.secondaries.join(', ') || '—'} · [Protection] ${ck.prot}/${R.protectionLimit}</small></h3>
-    <div class="deckstat-grid">${statTile(ck.size, T('เด็คหลัก', 'main deck'))}${statTile(ck.extra, 'Extra Zone')}${statTile(ck.units, T('ชนิดยูนิต', 'unit kinds'))}
+    <div class="deckstat-grid">${statTile(ck.size, T('เด็คหลัก', 'main deck'))}${statTile(ck.units, T('ชนิดยูนิต', 'unit kinds'))}
       ${statTile(ck.terr, T('terrain', 'terrain kinds'))}${statTile(nf(avgCost(d)), T('Cost เฉลี่ย', 'avg cost'), 'cy')}</div>
     <div class="curve2"><div class="head">${T('กระจาย Cost · ใบต่อ Cost', 'cost spread · cards per cost')}</div>${curve(d).slice(1).map((n, i) => `<div class="row${n ? '' : ' zero'}"><span>${i + 1}</span><i><em style="width:${clamp(n / 16 * 100, n ? 8 : 0, 100)}%"></em></i><b>${n}</b></div>`).join('')}</div>
     <div class="colorbar">${Object.entries(ck.stat.c).map(([k, v]) => `<i style="flex:${v};background:${ZF.tone(k)}" title="${k} ${v}"></i>`).join('')}</div>
@@ -701,7 +699,6 @@ function vDecks(m) {
           if (x.n <= 0) { const i = target.findIndex(y => y.id === x.id); if (i >= 0) target.splice(i, 1); } save(); render(); });
         pl.addEventListener('click', () => { if (x.n >= R.maxCopy) return toast(T('ซ้ำได้ 3 ใบ', 'max 3 copies'), true);
           if (key === 'main' && deckSize(d) >= R.deckMax) return toast(T('เด็คหลักเต็ม ' + R.deckMax, 'main deck full'), true);
-          if (key === 'extra' && deckExtraSize(d) >= R.extraZoneMax) return toast(T('Extra Zone เต็ม', 'extra zone full'), true);
           x.n++; save(); render(); });
         mx.addEventListener('click', () => { x.n = R.maxCopy; const tot = deckSize(d); if (tot > R.deckMax) x.n -= tot - R.deckMax; save(); render(); });
         row.addEventListener('click', e => { if (!e.target.closest('.qty')) openDetail(c); });
@@ -712,7 +709,6 @@ function vDecks(m) {
     box.appendChild(w); return box;
   };
   lists.appendChild(mkList(T('เด็คหลัก (Main)', 'Main deck'), d.main, 'main'));
-  lists.appendChild(mkList(T('Extra Zone', 'Extra Zone'), d.extra || (d.extra = []), 'extra'));
   left.appendChild(lists);
   left.appendChild(stat);
   const acts = el('div', 'panel'); acts.style.marginTop = '16px';
@@ -754,14 +750,16 @@ function vDecks(m) {
     });
   const addToExtra = el('div'); addToExtra.className = 'muted'; addToExtra.style.marginTop = '10px';
   const exBtn = el('div', 'actions');
-  exBtn.appendChild(btnX(T('ย้ายใบที่เลือก → Extra Zone', 'send selected → extra'), () => {
+  /* V.25: ไม่มี Extra Zone — ปุ่มนี้เหลือไว้เป็น "เพิ่มใบที่พิมพ์มา" */
+  exBtn.appendChild(btnX(T('เติมจากการ์ดที่พิมพ์รหัส', 'add by typed card code'), () => {
     const pick2 = prompt(T('พิมพ์โค้ดการ์ด เช่น SD01-007', 'card code, e.g. SD01-007'), 'SD01-010');
     const hit = cardIdOf((pick2 || '').toUpperCase().trim());
     if (!hit) return toast(T('ไม่พบใบนั้น', 'not found'), true);
     const st = colorStat(d); const c = CARD(hit);
-    if (c.color !== st.primary && c.color !== 'Colorless') return toast(T('Extra Zone ต้องเป็นสีหลัก/Colorless', 'extra must be primary/Colorless'), true);
-    if (deckExtraSize(d) >= R.extraZoneMax) return toast(T('Extra Zone เต็ม', 'extra zone full'), true);
-    const x = (d.extra ||= []).find(y => y.id === hit); if (x) x.n++; else d.extra.push({ id: hit, n: 1 }); save(); render();
+    if (c.color !== st.primary && c.color !== 'Colorless' && st.secondaries.length >= 1 && !st.secondaries.includes(c.color)) return toast(T('คู่สีรองได้ 1 สี', 'one secondary colour max'), true);
+    let x = d.main.find(y => y.id === hit); if (x) { if (x.n >= R.maxCopy) return toast(T('ซ้ำครบ 3 ใบ', 'max 3 copies'), true); x.n++; }
+    else { if (deckSize(d) >= R.deckMax) return toast(T('เด็คเต็ม ' + R.deckMax, 'deck full'), true); d.main.push({ id: hit, n: 1 }); }
+    save(); render();
   }, 'ghost'));
   right.appendChild(pg); right.appendChild(exBtn); right.appendChild(addToExtra);
   two.appendChild(right); m.appendChild(two);
@@ -1023,7 +1021,7 @@ function vProfile(m) {
   const ex = rail(T('บัญชี & สำรองข้อมูล', 'account & backup'), T('ทุกอย่างอยู่ใน localStorage เครื่องคุณ', 'everything lives in this browser'));
   const ep = el('div', 'panel');
   const ta = el('textarea'); ta.rows = 8; ta.readOnly = true;
-  ta.value = JSON.stringify({ name: p.name, coins: p.coins, rp: p.rp, decks: p.decks.map(d => ({ name: d.name, color: d.color, main: d.main, extra: d.extra })) }, null, 1);
+  ta.value = JSON.stringify({ name: p.name, coins: p.coins, rp: p.rp, decks: p.decks.map(d => ({ name: d.name, color: d.color, main: d.main })) }, null, 1);
   ta.style.cssText = 'font-family:ui-monospace,monospace;font-size:11px;letter-spacing:0;text-align:left;white-space:pre';
   ep.appendChild(ta);
   const row = el('div', 'actions'); row.style.cssText = 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap';
@@ -1052,8 +1050,8 @@ function vBanlist(m) {
     ZF.ban.map(b => { const c = CARD(b.id); return `<tr><td><b>${esc(c.file)}</b> ${esc(c.name)}</td>
       <td class="num" style="color:${b.lim === 0 ? 'var(--rust)' : 'var(--gold)'}">${b.lim === 0 ? 'BANNED' : 'LIMIT ' + b.lim}</td>
       <td class="muted">${L(b.note)}</td></tr>`; }).join('')}</tbody></table>
-    <p class="muted" style="margin-top:14px">${T('โควตาที่บังคับตลอด: เด็คหลัก 40–60 · ซ้ำ≤3 · สีหลัก≥50% · คู่สี 1 สี · [Protection]≤6 · Extra Zone≤5 (สีหลัก/Colorless) · Arcanum ปิดอยู่',
-      'always enforced: 40–60 main, ≤3 copies, ≥50% primary colour, one secondary, [Protection] ≤6, Extra Zone ≤5 (primary/Colorless), Arcanum disabled')}</p>`;
+    <p class="muted" style="margin-top:14px">${T('โควตาที่บังคับตลอด: เด็ค 40–60 · ซ้ำ≤3 · สีหลัก≥50% · คู่สี 1 สี · [Protection]≤6 · ไม่มี Extra Zone / Arcanum แล้ว',
+      'always enforced: 40–60 cards, ≤3 copies, ≥50% primary colour, one secondary, [Protection] ≤6 · Extra Zone and Arcanum are gone')}</p>`;
   r.appendChild(tb);
 }
 

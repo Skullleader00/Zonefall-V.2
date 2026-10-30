@@ -106,11 +106,10 @@
       if (UI.hl.targets.includes(u.uid)) ce.classList.add('hl-target');
       const cd = card(u.id);
       UI.pos[u.uid] = [r, c];
-      const tk = el('div', 'tk ' + (u.side === human ? 'own' : 'foe') + (u.rested ? ' rested' : '') + (u.arc ? ' arc' : '') +
+      const tk = el('div', 'tk ' + (u.side === human ? 'own' : 'foe') + (u.rested ? ' rested' : '')
         (UI.sel && UI.sel.kind === 'unit' && UI.sel.uid === u.uid ? ' sel' : ''));
       tk.dataset.uid = u.uid; tk.dataset.cardId = u.id; tk.dataset.cardId = u.id;
       const fl = [];
-      if (u.arc) fl.push('<i>ARCANUM</i>');
       if (u.fused && u.fused.length) fl.push('<i class="tough">FUSED ×' + u.fused.length + '</i>');
       if (u.noDestroyBattle) fl.push('<i class="tough">ไม่ล้ม</i>');
       if (u.costLocked) fl.push('<i class="rest">Cost→' + u.costLocked + '</i>');
@@ -147,8 +146,8 @@
     const set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
     set(who + 'Name', p.deckName); set(who + 'Pts', p.corePoints); set(who + 'FlareN', p.flare);
     set(who + 'Hand', p.hand.length); set(who + 'Deck', p.deck.length); set(who + 'DeckN', p.deck.length);
-    set('foeOutN', p.outzone.length); set('foeRemN', p.remove.length); set('foeExtraN', p.extra.length);
-    set('ownOutN', p.outzone.length); set('ownOutN2', p.outzone.length); set('ownRemN', p.remove.length); set('ownExtraN', p.extra.length);
+    set('foeOutN', p.outzone.length); set('foeRemN', p.remove.length);
+    set('ownOutN', p.outzone.length); set('ownOutN2', p.outzone.length); set('ownRemN', p.remove.length);
     if (who === 'own') {
       set('ownUnits', Z.units(S, human).length + '/' + R.unitLimit);
       set('ownTerr', Z.terrains(S, human).length + '/' + Z.terrainLimit(S, human));
@@ -527,7 +526,7 @@
     const S = UI.S, bar = $('guardBar');
     if (!S.pending || S.pending.responder !== human) { bar.classList.add('hidden'); $('guardVeil').classList.add('hidden'); return; }
     const ev = S.pending.ev, actor = S.players[ev.actor], p = S.players[human];
-    const desc = { deploy: 'ลงยูนิต', command: 'ใช้ Command', terrain: 'วาง Terrain', move: 'เคลื่อนยูนิต', attack: 'โจมตี', ability: 'ใช้ความสามารถ', summonArc: 'เรียก Arcanum' }[ev.kind] || ev.kind;
+    const desc = { deploy: 'ลงยูนิต', command: 'ใช้ Command', terrain: 'วาง Terrain', move: 'เคลื่อนยูนิต', attack: 'โจมตี', ability: 'ใช้ความสามารถ' }[ev.kind] || ev.kind;
     $('guardTitle').textContent = `${actor.deckName} ${desc}` + (ev.tgt ? ` → [${card(ev.tgt.id).name}]` : '') + ' · ตอบโต้ได้ 1 ครั้ง';
     const box = $('guardOpts'); box.innerHTML = '';
     S.pending.opts.forEach(i => {
@@ -750,12 +749,13 @@
     <section><h3>วิธีเล่นบนหน้าจอนี้</h3><p><b>ลากการ์ด</b>จากมือลงช่องที่ไฮไลต์ (หรือแตะการ์ดแล้วแตะช่อง) · <b>ลากยูนิต</b>บนสนามไปช่องน้ำเงินเพื่อเดิน / ทับช่องแดงเพื่อโจมตี · <b>กดค้าง</b>การ์ดเพื่อดูข้อมูลเต็มใบ (ไม่มีการก๊อปปี้/เซฟรูปเกิดขึ้น) · เลื่อนมือด้วยลูกศร ‹ › หรือปาด · ปุ่ม ⤢ เข้าโหมดเต็มจอ</p></section>
     <section><h3>เป้าหมาย</h3><p>สะสม <b>${R.corePointsToWin} Core Point</b> · ได้จากจำนวนการ์ดที่คุณครองใน <b>Core Zone (แถว ${R.coreRow + 1})</b> ตอน End Phase ใบละ 1 · หรือให้อีกฝ่ายจั่วไม่ได้ (สมุดหมด = แพ้ทันที)</p></section>
     <section><h3>สนาม 5×3</h3><p>แถว ${R.rows}→1 จากฝั่งคุณขึ้นบน · ลงยูนิต/Command ที่แถวหลังตนเอง (แถว ${R.backRow.p0}) · Terrain วางแถวหน้า (แถว ${R.frontRow.p0}) ·ห้ามเข้าแถวหลังศัตรู · Terrain ไม่บล็อกทางและยูนิตยืนทับได้</p></section>
-    <section><h3>Flare</h3><p>แต่ละฝ่ายเริ่มที่ <b>${R.flareStart} Flare</b> แล้ว +1 ต่อเทิร์นของตัวเองจนถึง ${R.flareMax} · ไม่สะสมข้ามเทิร์น · ใช้ลงการ์ด/ร่าย/วาง Terrain/Activate · <b>โจมตีใช้ 1 Flare</b> (การเดินฟรี 1 ช่อง)</p></section>
-    <section><h3>แอ็คของยูนิต</h3><p>1 แอ็ค/เทิร์น (เดินหรือโจมตี) แล้ววางนอน · ลงสนามเทิร์นเดียวกันโจมตีได้เลยถ้ามี Flare · Some cards have "cannot move" conditions — ระบบล็อกให้อัตโนมัติ</p></section>
+    <section><h3>Flare &amp; แอ็ค</h3><p>แต่ละฝ่ายเริ่มที่ <b>${R.flareStart} Flare</b> แล้วบวก +1 ทุกเทิร์นของตัวเองจนถึงเพดาน ${R.flareMax} · ไม่สะสมข้ามเทิร์น · ใช้สำหรับลงการ์ด / ร่าย Command / วาง Terrain / กด [Activate]<br><b>กติกา V.25:</b> การ<b>โจมตีไม่ใช้ Flare</b> แต่กินแอ็คของยูนิต — หลังโจมตี (หรือหลังเดิน) ยูนิตจะ<b>วางนอน (rest)</b>เหมือนกัน · เดินได้ 1 ช่องต่อแอ็ค · โจมตีได้เฉพาะช่องข้างหน้า/ซ้าย/ขวา</p></section>
+    <section><h3>แอ็คของยูนิต</h3><p>ยูนิต 1 ตัวทำอะไร<b>อย่างเดียวต่อเทิร์น</b>: เดิน 1 ช่อง · โจมตี · หรือใช้ [Action]/[Activate] แล้วยอมวางนอน · การ์ดที่ลงใหม่จะถูกวางนอน ต้องรอต้นเทิร์นถัดไปจึงขยับ/โจมตีได้ · การ์ดที่มีเงื่อนไข “cannot move / cannot attack” ระบบล็อกให้เอง</p></section>
     <section><h3>ต่อสู้ (Persistent Power)</h3><p>ประกาศโจมตี → <b>ตอบโต้ 1 ครั้ง</b> → Counter ของผู้ป้องกัน → Attack ของผู้โจมตี → เอา CP ผู้โจมตีไปลบ CP ผู้ป้องกัน เหลือ 0 = ไป Outzone · ผู้โจมตีไม่เสียค่าพลัง · รีเซ็ตต้นเทิร์น · โจมตีได้เฉพาะหน้า/ซ้าย/ขวา</p></section>
-    <section><h3>Trigger Check (มีแอนิเมชัน + เลือกได้)</h3><p>เมื่ออีกฝ่ายได้ Core Point คุณเปิดใบบนสุด — ระบบ<b>โชว์การ์ดใบที่เปิด</b> ถ้ามีการ์ด [Trigger] จะถามว่า <b>ใช้เอฟเฟกต์</b> หรือ <b>เก็บขึ้นมือ</b> (ไม่ใช้ = ขึ้นมือตามปกติ)</p></section>
-    <section><h3>โควตา/โซน</h3><p>ยูนิต ≤ ${R.unitLimit} · Terrain ≤ ${R.terrainLimitBase} (ใบที่คุมหลายใบได้อย่าง Sylvan ไม่กินโควตา) · มือ ≤ ${R.handMax} (เกิน → Removezone) · Outzone/Removezone/Extra Zone กดที่กองเพื่อดูเนื้อหา · [Protection] ≤ ${R.protectionLimit} ใบ/เด็ค</p></section>
-    <section><h3>build นี้ไม่มี</h3><p>Arcanum / Arc-Flare (ปิดไว้ตามคำสั่ง) · เสียงประกอบ (ไฟล์ Sound Track ยังไม่ได้ต่อ) · Deck builder (ยังใช้เด็คอัตโนมัติจากชุดที่ import)</p></section>
+    <section><h3>Trigger Check (V.25)</h3><p>เช็คได้<b>เฉพาะตอนอีกฝ่ายได้ Core Point</b>เท่านั้น · แต่ละครั้งเปิด<b>1 ใบ</b> ไม่ว่าจะกวี้แต้มก็ตาม · และ<b>ได้ครั้งเดียวต่อฝ่ายต่อเทิร์น</b> · การ์ดที่เปิดเด้งขึ้นให้เห็น · ถ้ามี [Trigger] <b>เจ้าของเลือกเอง</b>ว่าจะใช้เอฟเฟกต์หรือเก็บขึ้นมือ</p></section>
+    <section><h3>การลด Core Point (V.25)</h3><p>เอฟเฟกต์ที่<b>ลด</b>แต้มอีกฝ่ายทำได้มากสุดคือเหลือ <b>1</b> — ทำให้ตกเป็น 0 ไม่ได้ · ฝ่ายที่ 0 อยู่แล้วก็อยู่ที่ 0 ต่อ (ไม่ถูกดันขึ้น) · ครบ ${R.corePointsToWin} แต้m=ชนะทันที</p></section>
+    <section><h3>โควตา · โซน · การจัดเด็ค</h3><p>บนสนาม: ยูนิต ≤ ${R.unitLimit} · Terrain ≤ ${R.terrainLimitBase} (ใบ multiTerrain เช่น Sylvan ไม่กินโควตา และ Terrain ไม่บล็อกทางเดิน) · มือ ≤ ${R.handMax} (เกิน → Removezone)<br>เด็ค: <b>${R.deckMin}–${R.deckMax}</b> ใบ · ซ้ำชื่อละ ≤ ${R.maxCopy} · สีหลัก ≥ 50% · คู่สีรองมีได้ 1 สี · [Protection] ≤ ${R.protectionLimit} · <b>ไม่มี Extra Zone แล้ว</b> — กองที่กดดูได้: เด็ค / Outzone / Removezone</p></section>
+    <section><h3>บิลด์นี้ไม่มีอะไร</h3><p><b>Arcanum / Arc-Flare</b> และ <b>Extra Zone</b> ถูกตัดออกตามกติกา V.25 · เสียงประกอบยังไม่ได้ต่อ · หน้า Lobby ด้านนอกมี deck builder + deckcheck แล้วส่งเด็คเข้ามาแข่งในหน้านี้ได้</p></section>
     ${ASSUMPTIONS}
   </div>`;
 
@@ -789,7 +789,7 @@
       destroyTerrain revealTop revealAdd addFromOutzone playFromOutzone playHandUnits outzoneToBottom
       shiftCost ascend foeDestroyChoice cancel bounce summon autoCore damage destroy flare core banish ·
       req: colorCount tribeCount terrainMin outzoneMin/Max flag(...) notPlayedThisTurn handCostReduce</p></section>
-      <section><h3>ชุดถัดไป</h3><p>ส่งรูปโฟลเดอร์/ลิงก์เพิ่ม (โดยเฉพาะใบที่มี Arcanum/Token) ผมจะ OCR + ต่อ ops + ใส่เด็คให้</p></section>
+      <section><h3>ชุดถัดไป</h3><p>ส่งรูปโฟลเดอร์/ลิงก์เพิ่ม (โดยเฉพาะใบ Token / ยูนิตชุดใหม่) ผมจะ OCR + ต่อ ops + ใส่เด็คให้</p></section>
     </div>`;
 
   /* ============ เริ่มเกม / o-p-s / เต็มจอ ============ */
@@ -862,7 +862,7 @@
     $('zvClose').onclick = () => $('zoneView').classList.add('hidden');
     document.querySelectorAll('.zonepile').forEach(b => b.addEventListener('click', () => {
       const foeSide = !!b.closest('#plateFoe');
-      openZone(foeSide ? aiSide : human, b.dataset.z, (foeSide ? 'ศัตรู · ' : 'คุณ · ') + ({ deck: 'เด็ค', outzone: 'Outzone', remove: 'Removezone', extra: 'Extra Zone' })[b.dataset.z]);
+      openZone(foeSide ? aiSide : human, b.dataset.z, (foeSide ? 'ศัตรู · ' : 'คุณ · ') + ({ deck: 'เด็ค', outzone: 'Outzone', remove: 'Removezone' })[b.dataset.z]);
     }));
     document.querySelectorAll('.rps-btn').forEach(b => b.onclick = () => { const cb = UI.rpsCb; UI.rpsCb = null; if (cb) cb(b.dataset.rps); });
     document.addEventListener('keydown', e => {

@@ -163,7 +163,7 @@ main#content{padding:26px var(--pad) 90px;max-width:1420px;margin:0 auto;scroll-
 .g-cards{grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));justify-items:center}
 .g-2{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
 .g-3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.g-side{grid-template-columns:minmax(0,1fr) 330px;align-items:start}
+.g-side{display:grid;grid-template-columns:minmax(0,1fr) 348px;gap:18px;align-items:start}
 .panel{background:linear-gradient(180deg,rgba(21,32,25,.72),rgba(8,13,11,.72));border:1px solid var(--hair);
   clip-path:var(--cut);padding:20px 26px;position:relative}
 .panel.hi{border-color:rgba(216,255,77,.3)}
@@ -558,7 +558,7 @@ dialog[open]{animation:dlgin .26s cubic-bezier(.2,.9,.25,1)}
 }
 
 /* §9 RESPONSIVE */
-@media (max-width:1240px){ .g-side{grid-template-columns:minmax(0,1fr)} .stage-side{grid-template-columns:1fr;grid-template-rows:auto auto 1fr} .stage-body{grid-template-columns:minmax(0,1fr)} .telemetry{max-height:150px} }
+@media (max-width:1240px){ .g-side{grid-template-columns:minmax(0,1fr);gap:16px} .stage-side{grid-template-columns:1fr;grid-template-rows:auto auto 1fr} .stage-body{grid-template-columns:minmax(0,1fr)} .telemetry{max-height:150px} }
 @media (max-width:1020px){
   :root{--card-w:168px;--card-h:238px}
   .header-shortcuts button span,.header-discord span,.header-about{display:none}
@@ -659,7 +659,7 @@ dialog[open]{animation:dlgin .26s cubic-bezier(.2,.9,.25,1)}
 .rcard.in-deck{border-top-color:var(--lime);box-shadow:inset 0 0 0 1px rgba(216,255,77,.4)}
 .rcard.in-deck::after{content:"✓ IN DECK";position:absolute;left:8px;bottom:8px;z-index:6;font-family:var(--f-disp);font-size:9px;letter-spacing:.14em;color:#08110a;background:var(--lime);padding:2px 7px}
 .dup-tag{position:absolute;top:32px;left:-2px;z-index:7;font-family:var(--f-disp);font-size:9px;letter-spacing:.1em;background:var(--gold);color:#12100a;padding:2px 8px}
-.pool-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));margin-top:14px;max-height:64vh;overflow:auto;padding-right:6px}
+.pool-grid{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));margin-top:14px;max-height:none;overflow:visible;padding-right:4px}
 .g-cards{grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));gap:14px 12px}
 
 /* list view of the vault */
@@ -731,7 +731,7 @@ body.in-stage .tabs,body.in-stage .topbar{filter:saturate(.6) brightness(.7)}
 #stage-out{background:transparent;border-color:rgba(255,91,74,.45);color:#ffb9b0;font-family:var(--f-disp);font-size:11px;letter-spacing:.16em}
 #stage-out:hover{background:var(--rust);color:#12060a}
 .stage-hd-rt{margin-left:auto;font-family:var(--f-disp);font-size:22px;color:var(--bone);letter-spacing:.1em}
-.stage-main{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:14px;padding:14px 16px;min-height:0}
+.stage-main{display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:12px;padding:12px;min-height:0}
 .frame-box{position:relative;min-height:0;height:100%;display:flex;flex-direction:column;gap:5px}
 iframe#frame{flex:1 1 auto;width:100%;min-height:0;height:100%;border:1px solid var(--hair-s);background:#040706;display:block} .frame-hint{flex:0 0 auto}
 .frame-box{display:flex;flex-direction:column;gap:5px;min-height:0;height:100%}
@@ -752,7 +752,7 @@ iframe#frame{flex:1 1 auto;width:100%;min-height:0;height:100%;border:1px solid 
 .rail-actions button{font-family:var(--f-disp);letter-spacing:.1em;text-transform:uppercase;font-size:11.5px;padding:10px}
 .rail-card.pay .kv b{color:var(--lime)}
 .rail-card.pay{border-color:rgba(216,255,77,.25)}
-@media (max-width:1100px){ .stage-main{grid-template-columns:minmax(0,1fr)} .stage-rail{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));display:grid;overflow:visible} .rail-card.grow{grid-column:1/-1} }
+@media (max-width:1120px){ .stage-main{grid-template-columns:minmax(0,1fr)} .stage-rail{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));display:grid;overflow:visible} .rail-card.grow{grid-column:1/-1} }
 @media (max-width:820px){
   .stage-main{grid-template-columns:minmax(0,1fr);padding:6px;gap:6px;grid-template-rows:minmax(0,1fr) auto}
   .frame-box{min-height:0}
@@ -944,8 +944,8 @@ iframe#frame{flex:1 1 auto;width:100%;min-height:0;height:100%;border:1px solid 
 /* deck-line rows: fixed thumbnail + tidy text */
 .deck-row{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:11px;align-items:center;padding:8px 10px}
 .deck-row img{width:46px;height:64px;object-fit:cover;object-position:top;border:1px solid var(--hair);background:#0a120f;display:block}
-.deck-row .dr-main b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.deck-row .dr-main span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.deck-row .dr-main b{white-space:normal;overflow-wrap:anywhere;line-height:1.28}
+.deck-row .dr-main span{white-space:normal;display:block;overflow-wrap:anywhere}
 .deck-row .qty{margin-left:0}
 @media (max-width:720px){
   .deck-row{grid-template-columns:38px minmax(0,1fr) auto;gap:9px;padding:7px 8px}
@@ -955,3 +955,69 @@ iframe#frame{flex:1 1 auto;width:100%;min-height:0;height:100%;border:1px solid 
 }
 .hero-cta button.accent{background:rgba(216,255,77,.1);border-color:var(--lime);color:var(--lime);font-weight:600}
 .hero-cta button.accent:hover{background:var(--lime);color:#08110a}
+
+
+/* ═════════════════════════════════════════════════════
+   §11 ธีมตามตัวเกม (Zonefall chrome) + จังหวะภาพ V.25
+   ═════════════════════════════════════════════════════ */
+@font-face{font-family:'Zonefall Display';src:url('../game/assets/fonts/zonefall-display.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'Zonefall UI';src:url('../game/assets/fonts/zonefall-ui.woff2') format('woff2');font-weight:400 700;font-display:swap}
+@font-face{font-family:'Zonefall Num';src:url('../game/assets/fonts/zonefall-num.woff2') format('woff2');font-weight:400;font-display:swap}
+
+:root{
+  --void:#0b0c11; --basalt:#0e0e14; --slate:#15161f; --iron:#1c1d25; --edge:#2a2c38;
+  --panel:#34363f; --panel-hi:#4b4e5a; --steel:#8d95a8;
+  --bone:#f2f5ff; --ash:#c3cde0; --dim:#8d95a8;
+  --lime:#20b6ff; --lime-d:#127fc0; --lime-dim:rgba(32,182,255,.14);
+  --cyan:#9ce4ff; --violet:#a94bd8; --rust:#e01818; --gold:#ff8a00; --core-hi:#ffd27a;
+  --hp:#3ddc84; --flux:#20b6ff;
+  --hair:rgba(242,245,255,.12); --hair-s:rgba(242,245,255,.22);
+  --glow:0 0 28px rgba(32,182,255,.25);
+  --f-disp:'Zonefall Display','Chakra Petch',ui-sans-serif,sans-serif;
+  --f-body:'Zonefall UI','IBM Plex Sans Thai',ui-sans-serif,system-ui,sans-serif;
+  /* จังหวะภาพ: ช้าลงให้ตามากอ่านได้ */
+  --t-ui:.34s; --t-in:.55s; --t-pop:.72s; --t-float:1.7s;
+}
+body::before{background:
+    radial-gradient(72% 46% at 50% -8%,rgba(32,182,255,.17),transparent 62%),
+    radial-gradient(50% 40% at 6% 94%,rgba(169,75,216,.14),transparent 66%),
+    radial-gradient(46% 34% at 96% 80%,rgba(255,138,0,.11),transparent 64%),
+    linear-gradient(#0b0c11,#10121b 55%,#0b0c11)}
+button{transition:transform var(--t-ui),background var(--t-ui),color var(--t-ui),border-color var(--t-ui),box-shadow var(--t-ui)}
+.rcard{transition:transform var(--t-in) cubic-bezier(.2,.9,.25,1),box-shadow var(--t-in),border-color var(--t-ui)}
+.stat b,.num{font-family:var(--f-disp)}
+.panel,.rail-head,.hero{animation:softIn var(--t-in) ease-out both}
+@keyframes softIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kv,.room-row,.list-row{transition:background var(--t-ui),border-color var(--t-ui)}
+#toast{transition:opacity var(--t-pop),transform var(--t-pop)}
+.boot-bar i{transition:width var(--t-pop)}
+.opener-cards .rcard{animation:flipin var(--t-pop) cubic-bezier(.15,.9,.3,1.2) backwards}
+.hero-cards img{animation:heroIn .9s cubic-bezier(.2,.9,.25,1) backwards}
+.logo-word{font-family:var(--f-disp);letter-spacing:.14em;color:#f2f5ff}
+.chip.on{color:#08131c}
+.badge.open{color:var(--lime)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.05ms!important}}
+
+/* ══ layout fix: two-column เด็คบอร์ด / ใช้พื้นที่ desktop เต็ม ══ */
+.g-side{display:grid!important;grid-template-columns:minmax(0,1fr) 352px;gap:18px;align-items:start}
+@media (max-width:1240px){ .g-side{grid-template-columns:minmax(0,1fr)!important} }
+.pool-grid{max-height:none;overflow:visible}
+
+/* ══ V.25 pass สุดท้าย: ความเป็นอ่านได้ของแผงเด็ค + เป้าแตะบนมือถือ ══ */
+.deck-row img{width:52px}
+.deck-row{grid-template-columns:52px minmax(0,1fr) auto;gap:12px}
+.deck-row .dr-main b{font-size:14px;line-height:1.3;color:#f8fbff}
+.deck-row .dr-main span{font-size:12.5px;line-height:1.6;color:#dde8f5}
+.chip-kw{border-color:rgba(32,182,255,.55);color:#cdeaff;background:rgba(32,182,255,.12);font-size:10.5px;padding:1px 6px}
+.deck-row .qty b{font-size:15px;color:#fff}
+.deck-row:hover{background:#12141c;border-color:var(--hair-s)}
+@media (min-width:1500px){ .deck-row .dr-main b{font-size:14.5px} .deck-row .dr-main span{font-size:13px} }
+@media (max-width:720px){
+  .hero-cta button,.hero-cta .primary{min-height:46px;font-size:13.5px;padding:12px 14px}
+  .deck-switch .chip{min-height:40px}
+  .pool-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+  .pool-grid .rc-meta b{font-size:10.6px}
+  .rail-head{margin-bottom:12px}
+  #content .actions button{min-height:44px}
+  .fgroup .set .chip{min-height:38px}
+}

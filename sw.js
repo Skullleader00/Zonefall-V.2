@@ -28,7 +28,8 @@ self.addEventListener('fetch', e => {
     })));
     return;
   }
-  e.respondWith(fetch(e.request).then(r => {
+  // โค้ด/หน้า: never reuse a stale HTTP cache entry
+  e.respondWith(fetch(e.request, { cache: 'no-store' }).then(r => {
     if (r.ok) { const cp = r.clone(); caches.open(APP).then(c => c.put(e.request, cp)); }
     return r;
   }).catch(async () => {

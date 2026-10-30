@@ -10,21 +10,22 @@
 
 const RULES = {
   name: 'Zonefall',
-  version: 'Dev V.24 · digital build v1.4 ( การ์ดจริง 52 ใบ · ทุกความสามารถต่อผลแล้ว · ไม่มี Arcanum · Flare เริ่ม 3 )',
+  version: 'Dev V.25 - digital build v1.5 (52 real cards | attack = rest, no Flare cost | Trigger Check 1 card per check | Core Point cannot drop to 0 | no Extra Zone, no Arcanum )',
   rows: 5, cols: 3, coreRow: 2,
   backRow: { p0: 4, p1: 0 }, frontRow: { p0: 3, p1: 1 },
   corePointsToWin: 7,
   flareMax: 8,
   flareStart: 3,               // แต่ละฝ่ายเริ่มที่ 3 Flare แล้วบวกขึ้นทีละ 1 ต่อเทิร์น (เพดาน 8)
-  arcanum: false,              // ตกลง: ยังไม่มี Arcanum / Arc-Flare ใน build นี้
   unitLimit: 4, terrainLimitBase: 1,
   handStart: 4, handMax: 10,
   deckMin: 40, deckMax: 60, maxCopy: 3,
-  attackFlare: 1,            // *ข้อสมมติ*โจมตีใช้ 1 Flare (มีการ์ดที่ระบุว่ายิงฟรี)
-  movePerAction: 1,          // *ข้อสมมติ*เดิน 1 ช่อง/แอ็ค
+  attackFlare: 0,      // rulebook V.25: attacking is an action that Rests the unit (like moving) - it costs no Flare
+  movePerAction: 1,    // 1 space per action, free
+  attackRests: true,   // attack consumes the unit's action by Resting it
+  corePointFloor: 1,   // losing Core Points can never take a score from >=1 down to 0
+  triggerCheckOncePerTurn: true, // one Trigger Check (1 card) per player per turn, only when the opponent gains a point
   secondPlayerNoFirstDraw: true,
   combatVariant: 'persistent',
-  extraZoneMax: 5,
   protectionLimit: 6,
 };
 
@@ -114,7 +115,7 @@ const CARDS = [
     cost: 5, cp: 2000,
     protection: false,
     abilities: [
-      { kw: 'On Play', when: 'deploy', text: 'Reveal 1 Red unit with cost 2 or less from your hand: Play it onto an open back-row space you control. If you do, draw 2 cards.', ops: [{"op":"draw","n":2}] },
+      { kw: 'On Play', when: 'deploy', text: 'Reveal 1 Red unit with cost 2 or less from your hand: Play it onto an open back-row space you control. If you do, draw 2 cards.', ops: [{"op":"playHandUnits","filter":"Red","maxCost":2,"row":"back","rested":true},{"op":"draw","n":2}] },
       { kw: 'Action', when: 'action', once: true, text: 'When another unit you control is destroyed by card effects, if this unit is Rested: Ready this unit and it gains +2000 Power until end of turn.', ops: [{"op":"cp","to":"self","n":2000,"dur":"turn","color":null,"tribe":null},{"op":"ready","to":"self"}] }
     ],
   },
@@ -195,7 +196,7 @@ const CARDS = [
     cost: 10, cp: 3000,
     protection: false,
     abilities: [
-      { kw: 'Cont', when: 'cont', text: 'During your turn, this unit gains +1000 Power for each other unit with cost 10 or higher you control.', ops: [{"op":"cp","to":"self","n":1000,"dur":"turn","color":null,"tribe":null}] },
+      { kw: 'Cont', when: 'cont', text: 'During your turn, this unit gains +1000 Power for each other unit with cost 10 or higher you control.', ops: [{"op":"cp","to":"self","n":1000,"dur":"turn","perOtherCostMin":10}] },
       { kw: 'Action', when: 'action', text: 'When you play a unit from hand: If the total cost of units you control on the field is 10 or higher and you do not control "Oskopus, Otherworldly Anomaly", play this unit from your hand Rested onto your front row.', ops: [] },
       { kw: 'Trigger', text: ': Play this unit onto a space you control. Devour target unit (Merge target under this unit).', ops: [] }
     ],
@@ -238,7 +239,7 @@ const CARDS = [
     cost: 3,
     protection: false,
     abilities: [
-      { kw: 'Cast', when: 'cast', text: 'Reveal the top 4 cards of your deck. Choose up to 1 card with cost 6 from among them and add it to your hand, then place the rest on the bottom of your deck in any order. If the card added to your hand is Blue, place the rest on top of your deck in any order instead.', ops: [{"op":"toBottomRest"}] }
+      { kw: 'Cast', when: 'cast', text: 'Reveal the top 4 cards of your deck. Choose up to 1 card with cost 6 from among them and add it to your hand, then place the rest on the bottom of your deck in any order. If the card added to your hand is Blue, place the rest on top of your deck in any order instead.', ops: [{"op":"revealAdd","n":4,"minCost":6,"maxCost":6,"upTo":true,"blueOnTop":true},{"op":"toBottomRest"}] }
     ],
   },
   {
@@ -256,7 +257,7 @@ const CARDS = [
     cost: 2,
     protection: false,
     abilities: [
-      { kw: 'Cast', when: 'cast', text: 'If you control 2 or more Blue units or Adventurer units: Choose 1 Rested unit you control; Ready that unit (that unit cannot be Readied again until end of turn).', ops: [{"op":"ready","to":"self"}], req: [{"kind":"colorCount","min":2},{"kind":"colorCount","color":"Blue","min":2}] }
+      { kw: 'Cast', when: 'cast', text: 'If you control 2 or more Blue units or Adventurer units: Choose 1 Rested unit you control; Ready that unit (that unit cannot be Readied again until end of turn).', ops: [{"op":"ready","to":"ask:ownRested","lockRestEndOfTurn":true}], req: [{"kind":"colorCount","min":2},{"kind":"colorCount","color":"Blue","min":2}] }
     ],
   },
   {
@@ -419,7 +420,7 @@ const CARDS = [
     abilities: [
       { kw: 'Attack', when: 'attack', once: true, text: 'When this unit attacks a unit with cost 6 or higher: Pay 2 Flare. If you do, play 1 Operation Command card from your hand without paying its cost.', ops: [] },
       { kw: 'Action', when: 'action', text: 'When you play an Operation Command card, after it resolves: This unit gains +2000 Power until end of turn.', ops: [{"op":"cp","to":"self","n":2000,"dur":"turn","color":null,"tribe":null}] },
-      { kw: 'Trigger', text: ': If you control 2 or more Blue units in your back row, play this unit onto your back row.', ops: [], req: [{"kind":"colorCount","min":2},{"kind":"colorCount","color":"Blue","min":2},{"kind":"colorBackRow","color":"Blue","min":2}] }
+      { kw: 'Trigger', text: ': If you control 2 or more Blue units in your back row, play this unit onto your back row.', ops: [{"op":"deploySelf","row":"back"}], req: [{"kind":"colorCount","min":2},{"kind":"colorCount","color":"Blue","min":2},{"kind":"colorBackRow","color":"Blue","min":2}] }
     ],
   },
   {
@@ -428,7 +429,7 @@ const CARDS = [
     cost: 1,
     protection: false,
     abilities: [
-      { kw: 'Cast', when: 'cast', text: 'Choose 1 unit with cost 6 or higher you control; it gains -3000 Power until end of turn. If its Power is not reduced to 0 by this effect, move that unit 1 space left or right.', ops: [{"op":"cp","to":"target","n":-3000,"dur":"turn"},{"op":"move","to":"self","dir":"side","n":1}] }
+      { kw: 'Cast', when: 'cast', text: 'Choose 1 unit with cost 6 or higher you control; it gains -3000 Power until end of turn. If its Power is not reduced to 0 by this effect, move that unit 1 space left or right.', ops: [{"op":"cp","to":"ask:ownHighCost","n":-3000,"dur":"turn","minCost":6},{"op":"if","cond":{"kind":"cpPositive","of":"target"},"then":[{"op":"move","to":"target","dir":"side","n":1}]}] }
     ],
   },
   {
@@ -465,7 +466,7 @@ const CARDS = [
     cost: 4, cp: 2000,
     protection: false,
     abilities: [
-      { kw: 'On Play', when: 'deploy', text: 'Look at the top 4 cards of your deck. Reveal up to 1 Blue card with cost 6 from among them and add it to your hand, then place the rest on the bottom of your deck in any order.', ops: [{"op":"revealAdd","n":4,"filter":"Blue"},{"op":"toBottomRest"}] },
+      { kw: 'On Play', when: 'deploy', text: 'Look at the top 4 cards of your deck. Reveal up to 1 Blue card with cost 6 from among them and add it to your hand, then place the rest on the bottom of your deck in any order.', ops: [{"op":"revealAdd","n":4,"filter":"Blue","minCost":6,"maxCost":6},{"op":"toBottomRest"}] },
       { kw: 'Cont', when: 'cont', text: 'If you played an Operation Command card this turn, other units you control in the same column as this unit gain +2000 Power.', ops: [{"op":"cp","to":"allyColumn","n":2000,"dur":"turn","color":null,"tribe":null}], req: [{"kind":"flag","flag":"operationPlayed"}] },
       { kw: 'Trigger', text: ': Draw 1 card.', ops: [{"op":"draw","n":1}] }
     ],
@@ -476,8 +477,8 @@ const CARDS = [
     cost: 6,
     protection: false,
     abilities: [
-      { kw: 'Cast', when: 'cast', text: 'Choose 1 Machine unit you control; it gains +3000 Power and "[Once per turn] End of battle this unit attacked: Ready this unit" until end of turn. If this card was played by a unit\'s effect, affect all Blue units you control instead of choosing 1 Machine unit.', ops: [{"op":"cp","to":"allyFilter","n":3000,"dur":"turn","color":"Blue","tribe":"Machine"},{"op":"ready","to":"self"}], req: [{"kind":"flag","flag":"byUnitEffect"}] },
-      { kw: 'Trigger', text: ': Reveal top 3 cards of your deck: Play 1 cost 6 unit from among them onto your back row, send the rest to Out Zone.', ops: [{"op":"revealAdd","n":3,"filter":"unit"},{"op":"playRevealed","maxCost":null}] }
+      { kw: 'Cast', when: 'cast', text: 'Choose 1 Machine unit you control; it gains +3000 Power and "[Once per turn] End of battle this unit attacked: Ready this unit" until end of turn. If this card was played by a unit\'s effect, affect all Blue units you control instead of choosing 1 Machine unit.', ops: [{"op":"if","cond":{"kind":"flag","flag":"byUnitEffect"},"then":[{"op":"cp","to":"allyUnits","n":3000,"dur":"turn","color":"Blue"}],"else":[{"op":"cp","to":"ask:machine","n":3000,"dur":"turn","tribe":"Machine","grantReadyAfterBattle":true}]}], req: [{"kind":"flag","flag":"byUnitEffect"}] },
+      { kw: 'Trigger', text: ': Reveal top 3 cards of your deck: Play 1 cost 6 unit from among them onto your back row, send the rest to Out Zone.', ops: [{"op":"revealAdd","n":3,"filter":"unit","keep":true},{"op":"playRevealed","minCost":6,"maxCost":6,"row":"back","restLeft":"outzone"}] }
     ],
   },
   {
@@ -505,7 +506,7 @@ const CARDS = [
     cost: 6, cp: 2000,
     protection: false,
     abilities: [
-      { kw: 'Activate', once: true, text: 'Discard 2 card: Choose 1 cost 6 Command card from your Out Zone; add it to your hand.', ops: [{"op":"discard","n":2,"upTo":false},{"op":"addFromOutzone","filter":"Command"}] },
+      { kw: 'Activate', once: true, text: 'Discard 2 card: Choose 1 cost 6 Command card from your Out Zone; add it to your hand.', ops: [{"op":"discard","n":2,"upTo":false},{"op":"addFromOutzone","filter":"Command","minCost":6,"maxCost":6}] },
       { kw: 'Action', when: 'action', text: 'When this unit attacks or is attacked, if this unit is in your front row: It gains +1000 Power until end of turn.', ops: [{"op":"cp","to":"self","n":1000,"dur":"turn","color":null,"tribe":null}] },
       { kw: 'Trigger', text: ': Play this unit onto your back row.', ops: [] }
     ],
@@ -516,7 +517,7 @@ const CARDS = [
     cost: 4, cp: 1000,
     protection: false,
     abilities: [
-      { kw: 'Activate', cost: 2, once: true, text: ': All cost 6 units you control gain +1000 Power until end of turn, and Ready all other units in your back row.', ops: [{"op":"cp","to":"target","n":1000,"dur":"turn","color":null,"tribe":null},{"op":"ready","to":"allyBackRow"}] },
+      { kw: 'Activate', cost: 2, once: true, text: ': All cost 6 units you control gain +1000 Power until end of turn, and Ready all other units in your back row.', ops: [{"op":"buffCost6Own","n":1000},{"op":"readyBackRowOthers"}] },
       { kw: 'Action', when: 'action', text: 'When your Blue unit is destroyed: Destroy this unit. If you do, look at the top 2 cards of your deck, place them on top of your deck in any order, then draw 1 card.', ops: [{"op":"draw","n":1},{"op":"revealAdd","n":2,"filter":"Blue"},{"op":"toBottomRest"},{"op":"destroySelf"}] },
       { kw: 'Trigger', text: ': Look at the top 2 cards of your deck, place them on top of your deck in any order, then draw 1 card.', ops: [{"op":"draw","n":1},{"op":"revealAdd","n":2,"filter":null},{"op":"toBottomRest"}] }
     ],
@@ -567,12 +568,10 @@ const DECKS = {
   sylvan: {
     name: 'SD01 · Verdant Sylvan (Green)', color: 'Green',
     main: ['sd01001', 'sd01001', 'sd01001', 'sd01002', 'sd01002', 'sd01002', 'sd01003', 'sd01003', 'sd01003', 'sd01004', 'sd01004', 'sd01004', 'sd01005', 'sd01005', 'sd01005', 'sd01006', 'sd01006', 'sd01006', 'sd01007', 'sd01007', 'sd01007', 'sd01008', 'sd01008', 'sd01008', 'sd01009', 'sd01009', 'sd01009', 'sd01015', 'sd01015', 'sd01015', 'sd01012', 'sd01012', 'sd01013', 'sd01013', 'sd01014', 'sd01014', 'sd01010', 'sd01010', 'sd01011', 'sd01011'],   // 40 ใบ
-    extra: ['sd01001', 'sd01001', 'sd01001', 'sd01002'],
   },
   machina: {
     name: 'SD04 · Blue Machina (Blue)', color: 'Blue',
     main: ['sd04001', 'sd04001', 'sd04001', 'sd040015', 'sd040015', 'sd040015', 'sd04002', 'sd04002', 'sd04002', 'sd04003', 'sd04003', 'sd04003', 'sd04004', 'sd04004', 'sd04004', 'sd04005', 'sd04005', 'sd04005', 'sd04006', 'sd04006', 'sd04006', 'sd04007', 'sd04007', 'sd04007', 'sd04008', 'sd04008', 'sd04008', 'sd04009', 'sd04009', 'sd04009', 'sd040012', 'sd040012', 'sd040013', 'sd040013', 'sd040014', 'sd040014', 'sd04010', 'sd04010', 'sd04011', 'sd04011'],   // 40 ใบ
-    extra: ['sd04001', 'sd04001', 'sd04001', 'sd040015'],
   },
 };
 

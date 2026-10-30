@@ -10,7 +10,7 @@ const ZAI = (function () {
 
   function value(S, u) {
     const cd = card(u.id);
-    return cp(S, u) / 1000 + (cd.type === 'arcanum' ? 1.5 : 0) + (inCore(u) ? 2.5 : 0) + (u.rested ? 0 : 0.6);
+    return cp(S, u) / 1000 + (inCore(u) ? 2.5 : 0) + (u.rested ? 0 : 0.6);
   }
 
   /* ---------- ตอบโต้ (หน้าต่าง Declaration-Response) ---------- */
@@ -70,16 +70,7 @@ const ZAI = (function () {
     let guard = 0;
     if (blocked(S)) return 'pending';
 
-    /* 0) Arc-Flare → เรียก Arcanum ลง Core Zone เป็นแอ็คแรก */
-    if (blocked(S)) return 'pending';
-    const arc = Z.arcPlayable(S, side);
-    if (arc.ok) {
-      const opt = arc.options.find(o => o.withArc) || arc.options.find(o => o.payCost && card(o.id).cost <= Math.max(0, p.flare - 2));
-      if (opt) {
-        const cellCore = arc.cells.filter(c => c.r === R.coreRow).sort((a, b) => a.c - b.c)[0];
-        if (cellCore) { Z.summonArc(S, side, opt.extraIdx, cellCore, opt.withArc); if (S.pending) return 'pending'; }
-      }
-    }
+    /* 0) (V.25: ตัด Arcanum / Extra Zone ออกแล้ว) */
 
     /* 1) ลง Terrain ถ้ามีและคุ้ม */
     for (let i = p.hand.length - 1; i >= 0; i--) {
@@ -160,7 +151,7 @@ const ZAI = (function () {
         // ก) โจมตีที่ทำลายได้ = ค่าสูงสุด
         Z.attackTargets(S, u).forEach(t => {
           const kill = cp(S, u) >= cp(S, t);
-          const cost = Z.canFreeAttack(S, u) ? 0 : R.attackFlare;
+          const cost = 0;   // V.25: โจมตี = rest ไม่ใช้ Flare
           if (S.players[side].flare < cost) return;
           const grind = (cp(S, t) - cp(S, u) * 0.9 < 1200) ? 2.6 : -2;
           const sc = (kill ? 6 + value(S, t) * 1.5 : grind) + (inCore(t) ? 3.2 : 0);

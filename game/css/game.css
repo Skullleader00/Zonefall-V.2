@@ -526,3 +526,109 @@ body.ingame .hand,body.ingame .log-body,body.ingame .zv-body,body.ingame .modal,
   place-items:center;gap:6px;font-size:10.5px;color:#0d0d12;background:linear-gradient(180deg,#ffe9b8,var(--core));
   border:2px solid #000;border-radius:99px;padding:5px 12px;box-shadow:0 6px 18px #000b;max-width:92vw}
 #rotateTip button{border:1.5px solid #000;background:#fff;color:#0d0d12;border-radius:99px;font-size:10px;padding:2px 8px}
+
+
+
+/* ============================================================================
+   V.25 · จังหวะภาพช้าลง (อ่านง่าย สมูท) + หน้าเริ่มเล่นใหญ่ขึ้น + เป้าแตะง่าย
+   ========================================================================== */
+:root{
+  --t-in:.55s; --t-pop:.7s; --t-slide:.5s; --t-ring:1.05s; --t-float:1.7s; --t-fast:.3s;
+  --tap:48px;
+}
+/* จังหวะของ token / ช่อง / การ์ดในมือ */
+.tk,.hand .hc,.cell,.zonerail,.flarerail,.chip,.plate *{transition-duration:var(--t-fast)!important}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.cell.flash::after{animation:fade .55s forwards}
+.cell.hl-cell{animation:pulse 2.3s infinite}
+.cell.hl-atk{animation:pulse 1.8s infinite}
+.cell.drop-ok{animation:pulse 1.7s infinite}
+#banner{animation:slam .7s cubic-bezier(.2,.9,.15,1)}
+.hand .hc,.hcard{animation:cardIn .52s cubic-bezier(.2,.9,.2,1) backwards}
+.tk.drop,.cell .drop-in{animation:drop .45s cubic-bezier(.2,.9,.2,1)}
+.guard-veil,.modal-veil{animation:veilIn .4s}
+.modal,.pick-panel,.ask-panel{animation:rise .45s cubic-bezier(.2,.9,.2,1)}
+.ask-trig img{animation:flipIn .95s cubic-bezier(.2,.9,.2,1)}
+.reveal-strip img{animation:flipIn .85s cubic-bezier(.2,.9,.2,1) backwards}
+.cell.flash-ok::after,.cell.flash-move::after,.cell.flash-bad::after,.cell.flash-good::after,.cell.drop-ok::after{animation:ringPulse 1s ease-out forwards}
+.tk.glow-effect::before{animation:spinRing 1.5s linear}
+.tk.shk img.tk-img{animation:shake .8s, hitFlash .8s}
+.chip.pulse-core{animation:corePop 1.4s}
+.float-num{animation:floatUp var(--t-float) ease-out forwards}
+#dragGhost.drop{animation:snapDrop .42s cubic-bezier(.2,1.5,.4,1)}
+#dragGhost.snap{animation:snapBack .55s cubic-bezier(.3,.9,.3,1)}
+.cell.nudge{animation:nudge .42s}
+.log-body>*{animation:logIn .45s ease-out}
+@keyframes logIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ---- หน้าเริ่มเล่น (modalHome) ให้ใหญ่ แตะง่าย ---- */
+.modal{width:min(860px,96vw);padding:22px 22px 24px;border-radius:14px}
+.modal h1{font-size:clamp(40px,13vw,68px);letter-spacing:7px;margin-bottom:8px}
+.modal .tagline{font-size:15.5px;line-height:1.7;margin:6px 0 20px}
+.pick{gap:12px;margin-bottom:20px}
+.pick label{font-size:14.5px;gap:12px;letter-spacing:.2px}
+.pick select{min-height:var(--tap);padding:13px 14px;font-size:15.5px;border-radius:8px}
+.cta{min-height:58px;font-size:22px;letter-spacing:4px;padding:17px;border-radius:9px}
+.cta.big{min-height:66px;font-size:24px;letter-spacing:5px}
+.hexpush{width:44px;height:44px;font-size:18px}
+.home-logo{width:82px;margin-bottom:8px}
+.link-btn{min-height:44px;font-size:14.5px;padding:10px 14px}
+.seedline{font-size:12px;line-height:1.7}
+
+/* ---- มือถือ: ทุกเป้าหมายแตะได้ไม่พลาด ---- */
+@media (max-width:640px){
+  .modal{width:min(100%,97vw);padding:18px 14px 20px}
+  .modal h1{font-size:clamp(38px,15vw,54px)}
+  .pick label{flex-direction:column;align-items:stretch;gap:6px}
+  .pick select{width:100%;font-size:16px}
+  .cta{font-size:21px;letter-spacing:3px}
+  .hexpush{width:46px;height:46px}
+  .zonepile{width:40px;height:48px}
+  .chips{gap:6px}
+  .chip{font-size:11px}
+  .chip b{font-size:15px}
+  .plate-id b{font-size:15px}
+  .plate-tag{font-size:9px}
+  .pick-title{font-size:15px}
+  .pick-act button{min-height:46px;font-size:15px}
+}
+/* จอใหญ่ (PC): ขยายการ์ดบนสนาม/มือ ให้อ่านง่ายขึ้นอีก */
+@media (min-width:1100px){
+  .cell{min-height:52px}
+  .hand .hc,.hcard{width:clamp(96px,8.6vw,132px)}
+}
+
+
+/* ---- V.25 addendum: ปิ่ ม-END / เป้าแตะ / จังหวะภาพบนมือถือ ---- */
+.endcap{min-height:46px;height:46px;width:64px}
+.endcap span{padding-top:14px;font-size:13.5px}
+#hand>*{transition:transform var(--t-fast) cubic-bezier(.2,.9,.2,1),box-shadow var(--t-fast),filter var(--t-fast)}
+.tk{transition:transform var(--t-fast),box-shadow var(--t-fast),filter var(--t-fast)!important}
+.cell{transition:box-shadow var(--t-fast),background var(--t-fast)}
+.hand .hc,.hcard,#hand>*{animation-duration:.52s}
+.reveal-strip,.ask-cards,.pick-cards{scroll-behavior:smooth}
+.log-body{scroll-behavior:smooth}
+@media (max-width:640px){
+  .cta.big{min-height:58px;font-size:20px;letter-spacing:3px;padding:14px}
+  .endcap{width:58px;min-height:50px;height:50px}
+  .hexpush{width:46px;height:46px}
+  .zonepile{width:42px;height:50px}
+  .cell{min-height:44px}
+  .plate{grid-template-columns:40px minmax(0,1fr) auto;gap:6px}
+}
+
+/* ---- V.25 add #2: ปุ่ ม o/p/s + bullet หนา้ เริ่่ม ----- */
+.rps-btn{clip-path:none;border:2px solid #000;border-radius:10px;background:linear-gradient(180deg,#2b2e39,#151721);padding:9px 4px 11px}
+.rps-btn:active{transform:scale(.95)}
+.rps-btn span{margin-top:5px;font-size:13.5px}
+.rps-rule{text-align:center;font-size:11.5px;color:#cfdcee;margin:9px 0 2px;letter-spacing:.4px}
+.rps-rule b{color:var(--core-hi)}
+ul.tagline.bullets{list-style:none;display:grid;gap:7px;margin:4px 0 18px;padding:0;text-align:left}
+ul.tagline.bullets li{position:relative;padding:8px 10px 8px 26px;font-size:14px;line-height:1.55;color:#dbe4f3;
+  background:linear-gradient(90deg,#ffffff0f,#ffffff03);border-left:3px solid var(--flare);border-radius:4px}
+ul.tagline.bullets li b{color:var(--core-hi)}
+ul.tagline.bullets li::before{content:"◆";position:absolute;left:9px;top:8px;color:var(--flare);font-size:11px}
+@media (max-width:640px){ ul.tagline.bullets li{font-size:13.5px} .rps-btn img{max-width:74px} }

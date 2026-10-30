@@ -35,6 +35,10 @@
     playedFrom: (S, src, c) => !!(src.eff && src.eff.from === c.value),
     playedWithoutFlare: (S, src) => !!(src.eff && src.eff.noFlare),
     byUnitEffect: (S, src) => !!(src.eff && src.eff.byUnit),
+    cpPositive: (S, src) => { const u = src.tgt || (src.uid && S.cards[src.uid]); if (!u) return false; return Z.effCp(S, u) > 0; },
+    targetRested: (S, src) => !!(src.tgt && src.tgt.rested),
+    costOfTarget: (S, src, cond) => { const u = src.tgt; if (!u) return false; const c = (cdOf(u.id).cost || 0) + (u.costShift || 0);
+      return (cond.maxCost == null || c <= cond.maxCost) && (cond.minCost == null || c >= cond.minCost) && (cond.costIs == null || c === cond.costIs); },
     notPlayedThisTurn: (S, src) => { const u = S.cards[src.uid]; return !!u && u.deployTurn * 1 < S.turnNo; },
     controlTribe: (S, src, c) => mine(S, src.side, u => (cdOf(u.id).tribe || '').includes(c.value)).length > 0,
     controlColor: (S, src, c) => mine(S, src.side, u => cdOf(u.id).color === c.color).length >= (c.n || 1),
@@ -45,12 +49,14 @@
   const test = (S, src, c) => { if (!c || !c.kind) return true; const f = COND[c.kind]; return f ? !!f(S, src, c) : true; };
 
   /* ----------和目标 pool ---------- */
-  function pool(S, src, kind) {
+  function pool(S, src, kind, op) {
     const Hh = h();
     switch (kind) {
       case 'machine': return mine(S, src.side, u => (cdOf(u.id).tribe || '').includes('Machine') && u.uid !== src.uid);
       case 'machineSameColumn': { const u = S.cards[src.uid]; return u ? mine(S, src.side, x => (cdOf(x.id).tribe || '').includes('Machine') && x.c === u.c && x.uid !== u.uid) : []; }
-      case 'ownHighCost': return mine(S, src.side, u => (cdOf(u.id).cost || 0) >= 6);
+      case 'ownHighCost': return mine(S, src.side, u => ((cdOf(u.id).cost || 0) + (u.costShift || 0)) >= (op && op.minCost != null ? op.minCost : 6));
+      case 'ownCost6': return mine(S, src.side, u => ((cdOf(u.id).cost || 0) + (u.costShift || 0)) === ((op && op.costIs) || 6));
+      case 'ownRested': return mine(S, src.side, u => u.rested);
       case 'ownFrontRow': return mine(S, src.side, u => u.r === R.frontRow[src.side]);
       case 'enemyCore': return mine(S, foeOf(src.side), u => u.r === R.coreRow);
       case 'alliesOther': return mine(S, src.side, u => u.uid !== src.uid);
@@ -64,7 +70,18 @@
   /* ถ้า op.to ขึ้นต้น 'ask:' และยังไม่เลือกเป้าหมาย → ขอร้องเลือก (คน=หน้าต่าง, AI=auto) */
   function resolveTarget(S, src, op, ctx, ops, i, kind, prompt) {
     if (src.tgt) return { tgt: src.tgt };
-    let cands = pool(S, src, kind);
+    let cands = pool(S, src, kind, op);
+    /* ข้อกำหนด cost ที่การด์ฅอง op ต้องกรองกลุ่างของคำที่ print มา */
+    cands = cands.filter(u => {
+      const c = (cdOf(u.id).cost || 0) + (u.costShift || 0);
+      if (op && op.minCost != null && c < op.minCost) return false;
+      if (op && op.maxCost != null && c > op.maxCost) return false;
+      if (op && op.costIs != null && c !== op.costIs) return false;
+      if (op && op.tribe && !(cdOf(u.id).tribe || '').includes(op.tribe)) return false;
+      if (op && op.color && cdOf(u.id).color !== op.color) return false;
+      if (op && op.restedOnly && !u.rested) return false;
+      return true;
+    });
     if (!cands.length) return { none: true };
     if (cands.length === 1 || !h().isHuman(src.side)) { const t = cands[0]; src.tgt = t; return { tgt: t }; }
     h().ask(S, {
@@ -75,6 +92,13 @@
   }
   /* สำหรับ pool ที่มาจาก op เอง (เช่น machineUnit) */
   function pickFrom(S, src, op, list, prompt, then) {
+    list = (list || []).filter(u => {
+      const c = (cdOf(u.id || '').cost || 0) + (u.costShift || 0);
+      if (op && op.minCost != null && c < op.minCost) return false;
+      if (op && op.maxCost != null && c > op.maxCost) return false;
+      if (op && op.costIs != null && c !== op.costIs) return false;
+      return true;
+    });
     if (!list.length) { say(S, 'ไม่มีเป้าหมายที่ตรงเงื่อนไข — ข้ามผล', 'dim'); return; }
     if (list.length === 1 || !h().isHuman(src.side)) return then(list[0]);
     h().ask(S, { kind: 'target', title: prompt || 'เลือก 1 เป้าหมาย', uids: list.map(u => u.uid), side: src.side, auto: () => list[0].uid, resume: v => v && then(S.cards[v]) });
@@ -139,10 +163,13 @@
   };
   FX.points = (S, src, op) => {
     const to = op.to === 'foe' ? foeOf(src.side) : src.side, p = S.players[to];
-    p.corePoints = Math.max(op.floor != null ? op.floor : 0, p.corePoints + (op.n || 1));
+    const d = op.n || 1, floor = (op.floor != null ? op.floor : (R.corePointFloor == null ? 0 : R.corePointFloor));
+    p.corePoints = d < 0 && p.corePoints >= floor ? Math.max(floor, p.corePoints + d) : Math.max(0, p.corePoints + d);
     an(S, { t: 'point', side: to, n: op.n, total: p.corePoints });
-    say(S, (op.n >= 0 ? '+' : '') + op.n + ' Core Point → ' + p.deckName + ' (' + p.corePoints + '/' + R.corePointsToWin + ')', op.n >= 0 ? 'good' : 'bad');
-    if (op.n > 0 && to === src.side && op.trigger !== false) Z.triggerCheck(S, foeOf(to));
+    say(S, (d >= 0 ? '+' : '') + d + ' Core Point → ' + p.deckName + ' (' + p.corePoints + '/' + R.corePointsToWin + ')', d >= 0 ? 'good' : 'bad');
+    /* V.25: เกีดขึ้น = อีกฝ้ายเกีด trigger check (engine จะผักเครา 1 ไบ/ตารน) */
+    if (d > 0 && to !== src.side && op.trigger !== false) Z.triggerCheck(S, to);
+    else if (d > 0 && to === src.side && op.trigger !== false) Z.triggerCheck(S, foeOf(to));
   };
   FX.foePoints = (S, src, op) => FX.points(S, src, { to: foeOf(src.side), n: -Math.abs(op.n || 1), floor: op.floor != null ? op.floor : 1 });
   FX.buff = (S, src, op, ctx, ops, i) => {
@@ -196,7 +223,14 @@
     let list = op.to === 'self' || !op.to ? (src.uid && S.cards[src.uid] ? [S.cards[src.uid]] : []) : (src.tgt ? [src.tgt] : []);
     if (op.to && op.to.indexOf && op.to.indexOf('ask:') === 0) list = src.tgt ? [src.tgt] : [];
     if (!list.length) { say(S, 'ไม่มีเป้าหมาย', 'dim'); return; }
-    list.forEach(u => { if (!u) return; u.rested = !toReady; if (toReady) S.players[u.side].stats.readyByEffect++; an(S, { t: toReady ? 'ready' : 'rest', uid: u.uid }); });
+    list.forEach(u => {
+      if (!u) return;
+      if (toReady && u.restLock === S.turnNo) { say(S, ' [⚑] ' + cdOf(u.id).name + ' ถูกจัด้งไม่กลับเจนตรงทีนนี้ (เครานั้น)', 'dim'); return; }
+      u.rested = !toReady;
+      if (toReady && op && op.lockRestEndOfTurn) { u.restLock = S.turnNo; say(S, ' ⚑ ' + cdOf(u.id).name + ' ถูก set ไม่รัดกลับจนช่องทีน', 'info'); }
+      if (toReady) S.players[u.side].stats.readyByEffect++;
+      an(S, { t: toReady ? 'ready' : 'rest', uid: u.uid });
+    });
     say(S, (toReady ? 'ตั้ง (Ready)' : 'วางนอน (Rest)') + ' ' + list.length + ' ตัว', 'good');
   }
   FX.readyBackRowOthers = (S, src) => {
@@ -553,6 +587,7 @@
   FX.fxRest = (S, src, op, ctx, ops, i) => setRest(S, src, op, false);
 
   /* op ไม่รู้จัก → เตือนใน log ไม่เงียบ */
+  window.ZfxPools = (S, src, kind, op) => { try { return pool(S, src, kind, op || {}); } catch (e) { return []; } };
   window.Zfx = new Proxy(FX, {
     get(t, k) {
       if (Object.prototype.hasOwnProperty.call(t, k)) return t[k];

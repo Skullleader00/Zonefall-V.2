@@ -115,8 +115,7 @@ const Z = (function () {
         side, deckKey: dk, deckName: D.name, faction: D.color,
         deck: shuffle(D.main.slice(), rng), hand: [], outzone: [], remove: [],
         stats: { terrainDestroyed: 0, commandPlayed: 0, operationPlayed: 0, pointsGained: 0, readyByEffect: 0, playedByUnitEffect: 0 },
-        extra: shuffle((D.extra || []).slice(), rng).map(id => ({ id, used: false })),
-        flare: 0, myTurns: 0, corePoints: 0, arcFlareReady: false,
+        flare: 0, myTurns: 0, corePoints: 0, tcDone: false,
       };
     });
     ['p0', 'p1'].forEach(side => { for (let i = 0; i < R.handStart; i++) draw(S, side); });
@@ -178,12 +177,23 @@ const Z = (function () {
     return o;
   }
 
-  function leaveField(S, o, zone) {                       // 'outzone' | 'remove' | 'hand' | 'extra'
+  /* V.25: การลด Core Point หามในการตำกเกรา 1 ให้กรณี 0 */
+  function addPoints(S, side, n, why) {
+    const p = S.players[side], floor = (R.corePointFloor == null ? 0 : R.corePointFloor);
+    const before = p.corePoints;
+    let after = before + (n || 0);
+    if ((n || 0) < 0 && before >= floor) after = Math.max(floor, after);
+    p.corePoints = Math.max(0, Math.min(99, after));
+    log(S, `◆ ${p.deckName} Core Point ${before} → ${p.corePoints}` + ((n || 0) ? ` (${n > 0 ? '+' : ''}${n})` : '') + (why ? ` · ${why}` : ''), (n || 0) < 0 ? 'bad' : 'good');
+    return p.corePoints - before;
+  }
+
+  function leaveField(S, o, zone) {                       // 'outzone' | 'remove' | 'hand'  ('extra' legacy → removezone)
     const t = cell(S, o.r, o.c);
     if (t) { if (t.unit === o) t.unit = null; if (t.terrain === o) t.terrain = null; }
     const p = S.players[o.side];
     if (zone === 'hand') p.hand.push(o.id);
-    else if (zone === 'extra') { const e = p.extra.find(x => x.id === o.id && !x.used); if (e) e.used = true; else p.extra.push({ id: o.id, used: true }); }
+    else if (zone === 'extra') p.remove.push(o.id);   // V.25: ไม่มี Extra Zone แล้ว → Removezone
     else p[zone === 'remove' ? 'remove' : 'outzone'].push(o.id);
     delete S.cards[o.uid];
   }
@@ -191,20 +201,20 @@ const Z = (function () {
     const cd = card(o.id);
     fxq(S, { t: 'destroy', uid: o.uid, side: o.side, cardId: o.id });
     if (o === S.cards[o.uid] && cd.type === 'unit') hook('unitDied', S, { side: o.side, uid: o.uid, cardId: o.id, color: cd.color });
-    if (cd.type === 'arcanum') { leaveField(S, o, 'extra'); log(S, `${verb} [${cd.name}] → Extra Zone (หงายหน้า, ใช้ไม่ได้อีก)`, 'bad'); }
-    else { if (hasFlag(cd, 'token')) { leaveField(S, o, 'extra'); log(S, `${verb} [${cd.name}] → Extra Zone (Token)`, 'bad'); } else { leaveField(S, o, 'outzone'); log(S, `${verb} [${cd.name}] → Outzone`, 'bad'); } }
+    if (hasFlag(cd, 'token')) { leaveField(S, o, 'remove'); log(S, `${verb} [${cd.name}] → Removezone (Token · V.25 ไม่มี Extra Zone)`, 'bad'); }
+    else { leaveField(S, o, 'outzone'); log(S, `${verb} [${cd.name}] → Outzone`, 'bad'); }
     (o.fused || []).forEach(fid => leaveField(S, S.cards[fid] || { id: fid, side: o.side, r: 9, c: 9 }, 'outzone'));
   };
 
   /* ------------------------------------------------------------ turn flow */
   function startTurn(S) {
     S.turnNo++; S.phase = 'draw'; S.turnActions = 0; S.pending = null;
+    S.players.p0.tcDone = false; S.players.p1.tcDone = false;   // Trigger Check: 1 ใบ/ฝ่าย/เทิร์น
     S.active = S.turnNo % 2 === 1 ? S.first : foe(S.first);
     const side = S.active, p = S.players[side];
     p.myTurns++;
     p.stats = { terrainDestroyed: 0, commandPlayed: 0, operationPlayed: 0, pointsGained: 0, readyByEffect: 0, playedByUnitEffect: 0 };
     p.flare = Math.min(R.flareMax, (R.flareStart || 1) + p.myTurns - 1);
-    p.arcFlareReady = R.arcanum !== false && p.flare >= R.flareMax;
     /* รีเซ็ตสถานะทั้งสนาม: ค่าพลังกลับเป็นพื้นฐาน (rulebook: รีเซ็ตเมื่อเริ่มเทิร์นใหม่) */
     units(S).forEach(u => { u.rested = false; u.dmg = 0; u.battleCp = 0; u.buffCp = 0; u.used = {}; u.noDestroyBattle = false; u.setPowerBase = null; });
     const skipFirstDraw = R.secondPlayerNoFirstDraw && p.myTurns === 1 && side !== S.first;
@@ -242,6 +252,11 @@ const Z = (function () {
      ถ้าไม่ใช้ (หรือไม่มีเอฟเฟกต์) การ์ดขึ้นมือตามปกติ */
   function triggerCheck(S, side) {
     const p = S.players[side];
+    /* V.25: เกิดเครา 1 ไบ/ครั้ง และจะเกิดขึ้นเคราเมื่ออีกฝ้ายไu0e14้เท่าเกีดขึ้น (ไม่มากกันครั้งต่ากเติก เครา 1 ไบเท่านั้น) */
+    if (R.triggerCheckOncePerTurn !== false) {
+      if (p.tcDone) { log(S, `⟐ Trigger Check (${p.deckName}) — เคราไปแล้วในเทรณนี้`, 'dim'); return; }
+      p.tcDone = true;
+    }
     if (!p.deck.length) { log(S, `⟐ Trigger Check — สมุดว่าง (${p.deckName})`, 'dim'); return; }
     const id = p.deck.shift();
     const cd = card(id);
@@ -272,6 +287,12 @@ const Z = (function () {
   /* ========================================================== ผลของความสามารถ (ops) */
   function pickTargets(S, src, spec) {
     const side = src.side;
+    /*กองที่ effects ประกาศไว้ (ask:ownHighCost, ask:machine, ask:ownRested …) ใช้ได้กับ ops ทุกชนิด*/
+    if (spec.to && String(spec.to).indexOf('ask:') === 0) {
+      const kind = String(spec.to).slice(4);
+      const pool = window.ZfxPools ? window.ZfxPools(S, src, kind, spec) : [];
+      return pool.filter(u => condOk(u, spec));
+    }
     switch (spec.to) {
       case 'self': return src.uid ? [S.cards[src.uid]].filter(Boolean) : [];
       case 'target': return src.tgt ? [src.tgt] : [];
@@ -340,6 +361,17 @@ const Z = (function () {
     if (op.tribe) list = list.filter(u => (card(u.id).tribe || '').toLowerCase().includes(String(op.tribe).toLowerCase()));
     if (op.cpMax != null) list = list.filter(u => effCp(S, u) <= op.cpMax);
     if (op.cpMin != null) list = list.filter(u => effCp(S, u) >= op.cpMin);
+    /* V.25: เงื่อนไข Cost/ชนิด/สถานะที่พิมพ์บนการ์ด ต้องกรองตอนเลือกลูกเกณฑ์ด้วย */
+    const costOf = u => (card(u.id).cost || 0) + (u.costShift || 0);
+    if (op.minCost != null) list = list.filter(u => costOf(u) >= op.minCost);
+    if (op.maxCost != null) list = list.filter(u => costOf(u) <= op.maxCost);
+    if (op.costIs != null) list = list.filter(u => costOf(u) === op.costIs);
+    if (op.costGt != null) list = list.filter(u => costOf(u) > op.costGt);
+    if (op.costLt != null) list = list.filter(u => costOf(u) < op.costLt);
+    if (op.restedOnly) list = list.filter(u => u.rested);
+    if (op.readyOnly) list = list.filter(u => !u.rested);
+    if (op.type) list = list.filter(u => card(u.id).type === op.type);
+    if (op.op === 'ready' && op.lockRestEndOfTurn) list = list.filter(u => u.restLock !== S.turnNo);
     if (op.notSelf && src.uid) list = list.filter(u => u.uid !== src.uid);
     if (op.column && src.uid) { const me = S.cards[src.uid]; if (me) list = list.filter(u => u.c === me.c); }
     return filt(list);
@@ -363,9 +395,11 @@ const Z = (function () {
     const who = () => (ctx.toOverride === 'foe' ? foe(side) : side);
     let cancelled = false;
     const targetOps = { cp: 1, destroy: 1, bounce: 1, move: 1, ready: 1, rest: 1, noDestroyBattle: 1, setPower: 1, damage: 1 };
-    if (op.to === 'target' && !src.tgt && targetOps[op.op]) {
-      const cands = candidatesFor(S, src, op);
-      if (!cands.length) { log(S, '  ↳ ไม่มีเป้าหมายที่ถูกต้อง — ข้ามผลส่วนนี้', 'dim'); return; }
+    const askKind = op.to && String(op.to).indexOf('ask:') === 0 ? String(op.to).slice(4) : null;
+    if ((op.to === 'target' || askKind) && !src.tgt && targetOps[op.op]) {
+      const poolOf = askKind && window.ZfxPools ? window.ZfxPools(S, src, askKind, op) : candidatesFor(S, src, op);
+      const cands = hasCond(op) ? poolOf.filter(u => condOk(u, op)) : poolOf;
+      if (!cands.length) { log(S, `  ↳ ไม่มีเป้าหมายที่ตรงเงื่อนไข${op.prompt ? ' (“' + op.prompt + '”)' : ''} — ข้ามผลส่วนนี้`, 'dim'); return; }
       const hostile = op.op === 'destroy' || op.op === 'bounce' || (op.op === 'move' && op.hostile) || (typeof op.n === 'number' && op.n < 0 && op.op === 'cp');
       pauseOp(S, src, op, ctx, ops, i, {
         kind: 'target', title: op.prompt || (hostile ? 'เลือกเป้าหมายของผลนี้' : 'เลือดยูนิตผู้รับผล'),
@@ -378,12 +412,17 @@ const Z = (function () {
     switch (op.op) {
         case 'cp': {
           const arr = op.to === 'deployer' ? (ctx.units || []) : pickTargets(S, src, op);
+          const perOther = op.perOtherCostMin != null
+            ? Math.max(0, units(S, side).filter(x => x.uid !== src.uid && (card(x.id).cost || 0) >= op.perOtherCostMin).length) : null;
+          if (op.grantReadyAfterBattle) arr.forEach(u => { const t = u && S.cards[u.uid]; if (t) t.react = (t.react || []).concat([{ hook: 'battleEnd', then: [{ op: 'ready', to: 'self' }] }]); });
           fxq(S, { t: 'buff', side, n: op.n, uids: arr.map(x => x && x.uid).filter(Boolean) });
           arr.forEach(u => {
             if (!u) return;
-            if (op.dur === 'battle') u.battleCp = (u.battleCp || 0) + op.n;
-            else if (op.dur === 'perm') u.permCp = (u.permCp || 0) + op.n;
-            else u.buffCp = (u.buffCp || 0) + op.n;
+            const amt = op.n * (perOther == null ? 1 : Math.max(1, perOther));
+            if (op.dur === 'battle') u.battleCp = (u.battleCp || 0) + amt;
+            else if (op.dur === 'perm') u.permCp = (u.permCp || 0) + amt;
+            else u.buffCp = (u.buffCp || 0) + amt;
+            if (perOther != null) log(S, `  ↳ [${card(u.id).name}] ${amt > 0 ? '+' : ''}${amt} CP (= ${op.n} × ${Math.max(1, perOther)} units Cost ≥ ${op.perOtherCostMin})`, 'good');
           });
           log(S, `  ↳ ผลจาก [${src.uid && S.cards[src.uid] ? card(S.cards[src.uid].id).name : (card(ctx.cardId||'')||{}).name || 'ความสามารถ'}] CP ${op.n > 0 ? '+' : ''}${op.n} (${op.dur || 'turn'})`, 'good');
           break;
@@ -411,7 +450,7 @@ const Z = (function () {
         case 'flare': S.players[side].flare = Math.min(99, S.players[side].flare + op.n); fxq(S, { t: 'flare', side, n: op.n }); break;
         case 'core': {
           const t = op.to === 'foe' ? foe(side) : side;
-          S.players[t].corePoints = Math.max(0, S.players[t].corePoints + op.n);
+          addPoints(S, t, op.n, 'score change');
           log(S, `  ↳ Core Point ของ ${S.players[t].deckName} ${op.n > 0 ? '+' : ''}${op.n} (รวม ${S.players[t].corePoints})`, op.n > 0 ? 'good' : 'bad');
           break;
         }
@@ -457,7 +496,9 @@ const Z = (function () {
           const list = targetSet(S, src, op.to, op);
           list.forEach(u => {
             if (!u) return;
+            if (op.op === 'ready' && u.restLock === S.turnNo) { log(S, `  ⚑ [${card(u.id).name}] ถูกจัด้งไม่ให้ตั้งคืนในเทรณนี้`, 'dim'); return; }
             const was = u.rested; u.rested = (op.op === 'rest');
+            if (op.op === 'ready' && was && op.lockRestEndOfTurn) u.restLock = S.turnNo;
             if (op.op === 'ready' && was) S.players[u.side].stats.readyByEffect++;
             fxq(S, { t: op.op === 'ready' ? 'ready' : 'rest', uid: u.uid });
             log(S, `  ↳ ${op.op === 'ready' ? 'ตั้ง (Ready)' : 'วางนอน (Rest)'} [${card(u.id).name}]`, 'good');
@@ -479,7 +520,7 @@ const Z = (function () {
         case 'noDestroyBattle': targetSet(S, src, op.to, op).forEach(u => { if (u) { u.noDestroyBattle = true; log(S, `  🛡 [${card(u.id).name}] ไม่ถูกทำลายจากการต่อสู้เทิร์นนี้`, 'guard'); } }); break;
         case 'point': {
           const to = op.to === 'foe' ? foe(src.side) : src.side;
-          S.players[to].corePoints += op.n; S.players[to].stats.pointsGained += op.n;
+          addPoints(S, to, op.n, 'effect'); if (op.n > 0) S.players[to].stats.pointsGained += op.n;
           const who = src.uid && S.cards[src.uid] ? card(S.cards[src.uid].id).name : (card(src.cardId || '') || {}).name || 'ผลAbility';
           fxq(S, { t: 'point', side: to, n: op.n, total: S.players[to].corePoints });
           log(S, `◆ [${who}] → +${op.n} Point ให้ ${S.players[to].deckName} (รวม ${S.players[to].corePoints}/${R.corePointsToWin})`, 'good');
@@ -489,7 +530,7 @@ const Z = (function () {
         }
         case 'foePoint': {
           const t = foe(src.side), p2 = S.players[t];
-          p2.corePoints = Math.max(op.floor != null ? op.floor : 0, p2.corePoints + op.n);
+          addPoints(S, t, op.n, 'point drain');
           log(S, `  ↳ ${p2.deckName} เสีย Point → เหลือ ${p2.corePoints}`, 'bad');
           break;
         }
@@ -503,11 +544,25 @@ const Z = (function () {
           const p2 = S.players[src.side];
           const n = op.n === -1 ? Math.max(1, units(S, src.side).filter(u => card(u.id).color === 'Blue' || (card(u.id).tribe || '').toLowerCase().includes('adventurer')).length) : (op.n || 1);
           const ids = revealTop(S, src.side, n, op.prompt || 'เปิดดูสมุด');
-          const ok = ids.filter(id => matchFilter(S, id, op.filter) && (op.maxCost == null || (card(id).cost || 0) <= op.maxCost) && (op.minCost == null || (card(id).cost || 0) >= op.minCost) && (!op.onlyType || card(id).type === op.onlyType));
+          const ok = ids.filter(id => matchFilter(S, id, op.filter) && (op.maxCost == null || (card(id).cost || 0) <= op.maxCost) && (op.minCost == null || (card(id).cost || 0) >= op.minCost) && (op.costIs == null || (card(id).cost || 0) === op.costIs)
+            && (!op.onlyType || card(id).type === op.onlyType) && (!op.onlyColor || card(id).color === op.onlyColor));
+          /* V.25: op.keep = เปิดเผยแล้วค้างไว้ (ถอนออกจากสมุด) ให้ opsถัดไป เช่น playRevealed เป็นผู้เลือก */
+          if (op.keep) {
+            ids.forEach(idz => { const kz = p2.deck.indexOf(idz); if (kz >= 0) p2.deck.splice(kz, 1); });
+            S.reveal = { side: src.side, ids: ids.slice(), reason: op.prompt || 'เปิดดู', kept: true, at: S.turnNo };
+            if (!ok.length) { S.reveal = null; log(S, '  ↳ ไม่มีใบตรงเงื่อนไข → คืนใต้สมุดทั้งหมด', 'dim'); restToBottom(S, src.side, ids); break; }
+            log(S, `  ✧ เปิดดู ${ids.length} ใบ: ${ids.map(idz => card(idz).name).join(' / ')}`, 'info');
+            break;
+          }
           const finish = (chosen) => {
             if (chosen) { const k = ids.indexOf(chosen); if (k >= 0) ids.splice(k, 1); toHand(S, src.side, chosen); fxq(S, { t: 'tohand', side: src.side, cardId: chosen }); log(S, `  ↳ นำ [${card(chosen).name}] ขึ้นมือ`, 'good'); }
             else log(S, '  ↳ ไม่เลือกใบใด — ทั้งหมดกลับใต้สมุด', 'dim');
-            if (op.rest !== 'outzone') restToBottom(S, src.side, ids); else ids.forEach(idz => S.players[src.side].outzone.push(idz));
+            /* "ถ้าใบที่เลือกเป็นสีน้ำเงิน ให้วางใบที่เหลือคืน “บน” สำหนักตามลำดับ" */
+            if (op.blueOnTop && chosen && card(chosen).color === 'Blue' && ids.length) {
+              S.players[src.side].deck.unshift.apply(S.players[src.side].deck, ids.slice());
+              log(S, `  ↳ ใบที่เลือกเป็นสีน้ำเงิน → คืน ${ids.length} ใบที่เหลือไว้ “บน” สมุด`, 'info');
+            }
+            else if (op.rest !== 'outzone') restToBottom(S, src.side, ids); else ids.forEach(idz => S.players[src.side].outzone.push(idz));
           };
           if (!ok.length) { log(S, '  ↳ ไม่มีการ์ดตรงเงื่อนไข — กลับใต้สมุดทั้งหมด', 'dim'); restToBottom(S, src.side, ids); break; }
           if (!isHuman(S, src.side)) { finish(op.upTo === false ? ok[0] : ok[0]); break; }
@@ -523,7 +578,10 @@ const Z = (function () {
         case 'toBottomRest': { const ids = (S.reveal && S.reveal.side === src.side) ? S.reveal.ids.slice() : []; restToBottom(S, src.side, ids); break; }
         case 'addFromOutzone': {
           const p2 = S.players[src.side];
-          const cands = p2.outzone.filter(id => matchFilter(S, id, op.filter));
+          const cands = p2.outzone.filter(id => matchFilter(S, id, op.filter)
+            && (op.minCost == null || (card(id).cost || 0) >= op.minCost)
+            && (op.maxCost == null || (card(id).cost || 0) <= op.maxCost)
+            && (op.costIs == null || (card(id).cost || 0) === op.costIs));
           if (!cands.length) { log(S, '  ↳ ไม่มีใน Outzone ที่ตรงเงื่อนไข', 'dim'); break; }
           const take = (idz) => { const k = p2.outzone.indexOf(idz); if (k >= 0) { p2.outzone.splice(k, 1); toHand(S, src.side, idz); fxq(S, { t: 'tohand', side: src.side, cardId: idz }); log(S, `  ↳ เอา [${card(idz).name}] จาก Outzone ขึ้นมือ`, 'good'); } };
           if (cands.length === 1 || !isHuman(S, src.side)) { take(cands[0]); break; }
@@ -537,12 +595,30 @@ const Z = (function () {
         case 'playFromOutzone': case 'playOutzoneRest': case 'playRevealed': {
           const p2 = S.players[src.side];
           const zone = op.op === 'playRevealed' ? 'deck' : 'outzone';
-          const i = p2[zone].findIndex(id => card(id) && card(id).type === 'unit' && (!op.filter || matchFilter(S, id, op.filter)) && (op.maxCost == null || (card(id).cost || 0) <= op.maxCost));
-          if (i >= 0) {
+          /* V.25: 'playRevealed' ต้องเลือกจากกองที่เปิดเผยค้างไว้เท่านั้น (ไม่ดึงจากทั้งสมุด) */
+          const kept = op.op === 'playRevealed' && S.reveal && S.reveal.side === src.side ? S.reveal.ids.slice() : null;
+          const testId = id => card(id) && card(id).type === 'unit' && (!op.filter || matchFilter(S, id, op.filter)) && (op.minCost == null || (card(id).cost || 0) >= op.minCost)
+            && (op.maxCost == null || (card(id).cost || 0) <= op.maxCost)
+            && (op.costIs == null || (card(id).cost || 0) === op.costIs);
+          const hitId = (kept || p2[zone]).find(testId);
+          const i = hitId != null ? (kept ? kept.indexOf(hitId) : p2[zone].indexOf(hitId)) : -1;
+          if (kept && !hitId) { log(S, `  ↳ ไม่มียูนิตตรงเงื่อนไขในกองที่เปิด${op.minCost != null ? ' (Cost ≥' + op.minCost + ')' : ''} → คืนใต้สมุด`, 'dim'); restToBottom(S, src.side, kept); S.reveal = null; }
+          else if (kept && hitId != null) {
+            S.reveal.ids = kept.filter(x => x !== hitId);
+            const left = op.restLeft === 'outzone' ? (() => { p2.outzone.push.apply(p2.outzone, S.reveal.ids); const c = S.reveal.ids.length; S.reveal.ids = []; return c; })() : (() => { const c = S.reveal.ids.length; restToBottom(S, src.side, S.reveal.ids); S.reveal.ids = []; return c; })();
+            if (left) log(S, `  ↳ อีก ${left} ใบที่เปิดไว้ → ${op.restLeft === 'outzone' ? 'Outzone' : 'ใต้สมุด'}`, 'dim');
+            S.reveal = null;
+            const cell = (op.row === 'front' ? Z_.frontCells(S, src.side) : Z_.backEmptyAll(S, src.side))[0];
+            if (cell) {
+              const u = makeCard(S, hitId, src.side, cell.r, cell.c, 'unit'); u.deployed = false;
+              log(S, `  ⛬ นำ [${card(hitId).name}] จากกองที่เปิดลงสนาม (ไม่นับ Flare)`, 'good');
+              runHook(S, src.side, u.uid, 'deploy', {});
+            }
+          } else if (i >= 0) {
             const id = p2[zone].splice(i, 1)[0];
             const cell = (op.row === 'front' ? Z_.frontCells(S, src.side) : Z_.backEmptyAll(S, src.side))[0];
             if (cell) {
-              const u = makeCard(S, id, src.side, cell.r, cell.c, 'unit'); if (1) u.deployed = true; u.deployed = false; u.arc = false;
+              const u = makeCard(S, id, src.side, cell.r, cell.c, 'unit'); u.deployed = false;
               if (/Rested/i.test(op.op + JSON.stringify(op))) u.rested = true;
               log(S, `  ⛬ นำ [${card(id).name}] จาก ${zone === 'deck' ? 'สมุด' : 'Outzone'}ลงสนาม (ไม่นับ Flare)`, 'good');
               runHook(S, src.side, u.uid, 'deploy', {});
@@ -593,11 +669,15 @@ const Z = (function () {
           const p2 = S.players[src.side];
           let slots = Z_.backEmptyAll(S, src.side);
           for (let k = 0; k < (op.n || 1) && slots.length; k++) {
-            const i = p2.hand.findIndex(id => card(id).type === 'unit' && matchFilter(S, id, op.filter));
+            const i = p2.hand.findIndex(id => card(id).type === 'unit' && matchFilter(S, id, op.filter)
+              && (op.minCost == null || (card(id).cost || 0) >= op.minCost)
+              && (op.maxCost == null || (card(id).cost || 0) <= op.maxCost)
+              && (op.costIs == null || (card(id).cost || 0) === op.costIs));
             if (i < 0) break;
             const id = p2.hand.splice(i, 1)[0];
-            const cell = slots.shift();
-            const u = makeCard(S, id, src.side, cell.r, cell.c, 'unit'); u.deployed = false;
+            const cell = (op.row === 'front' ? frontCells(S, src.side) : slots).shift() || slots.shift();
+            if (!cell) { log(S, `  \u0e23\u0e21\u0e31\u0e1a\u0e01\u0e32\u0e07\u0e2b\u0e21\u0e31\u0e07\u0e2a\u0e33\u0e2b\u0e23\u0e31\u0e1a\u0e2a\u0e16\u0e17\u0e35\u0e48 cell \u0e27\u0e48\u0e32\u0e2a\u0e16\u0e21\u0e35\u0e08\u0e07\u0e27\u0e48\u0e32\u0e2a\u0e33\u0e2b\u0e23\u0e31\u0e1a`, 'dim'); p2.hand.push(id); break; }
+            const u = makeCard(S, id, src.side, cell.r, cell.c, 'unit'); u.deployed = false; if (op.rested) u.rested = true;
             log(S, `  ⛬ เรียก [${card(id).name}] จากมือ (ผลของ Trigger)`, 'good');
             runHook(S, src.side, u.uid, 'deploy', {});
           }
@@ -684,7 +764,28 @@ const Z = (function () {
       return cd.color === x || cd.type === x.toLowerCase() || tri.toLowerCase().includes(x.toLowerCase());
     });
   }
-  function targetSet(S, src, to, op) {
+  /* V.25: ข้อกำนดที่พิพบนการด์ (สี/เผ่า/Cost/ชนิ/สถานภางนอน) ต้องกรองกลุ่างของเง้า */
+  function condOk(u, op) {
+    if (!u) return false; const cd = card(u.id); if (!cd) return false;
+    const c = (cd.cost || 0) + (u.costShift || 0);
+    if (op.color && cd.color !== op.color) return false;
+    if (op.tribe && !(cd.tribe || '').includes(op.tribe)) return false;
+    if (op.type && cd.type !== op.type) return false;
+    if (op.minCost != null && c < op.minCost) return false;
+    if (op.maxCost != null && c > op.maxCost) return false;
+    if (op.costIs != null && c !== op.costIs) return false;
+    if (op.restedOnly && !u.rested) return false;
+    if (op.readyOnly && u.rested) return false;
+    return true;
+  }
+  const hasCond = op => !!op && (op.color || op.tribe || op.type || op.minCost != null || op.maxCost != null || op.costIs != null || op.restedOnly || op.readyOnly);
+  function targetSet(S, src, to, op) { const raw = targetSetBase(S, src, to, op); return hasCond(op) ? raw.filter(u => condOk(u, op)) : raw; }
+  function targetSetBase(S, src, to, op) {
+    if (to && String(to).indexOf('ask:') === 0) {
+      const kind = String(to).slice(4);
+      const pool = window.ZfxPools ? window.ZfxPools(S, src, kind, op || {}) : [];
+      return pool.filter(u => condOk(u, op || {}));
+    }
     const side = src.side;
     const byFilter = arr => (op && (op.color || op.tribe) ? arr.filter(u => (!op.color || card(u.id).color === op.color) && (!op.tribe || (card(u.id).tribe || '').includes(op.tribe))) : arr);
     switch (to) {
@@ -759,7 +860,7 @@ const Z = (function () {
         case 'inHand': break;
         case 'handCostReduce': break;
         case 'terrainMin': if (terrains(S, side).length < (q.min || 1)) return false; break;
-        case 'colorCount': if (units(S, side).filter(x => card(x.id).color === q.color).length < (q.min || 1)) return false; break;
+        case 'colorCount': if (units(S, side).filter(x => !q.color || card(x.id).color === q.color).length < (q.min || 1)) return false; break;
         case 'colorBackRow': if (units(S, side).filter(x => x.r === R.backRow[side] && card(x.id).color === q.color).length < (q.min || 1)) return false; break;
         case 'outzoneMin': if (S.players[side].outzone.length < (q.min || 1)) return false; break;
         case 'outzoneMax': if (S.players[side].outzone.length > (q.min || 0)) return false; break;
@@ -771,7 +872,6 @@ const Z = (function () {
     }
     return true;
   }
-
 
   /* ========================================================== คำสั่ง /แอ็ค */
   /* ทุกแอ็คผ่านหน้าต่าง Declaration-Response: อีกฝ่ายตอบโต้ได้ 1 ครั้ง */
@@ -836,7 +936,7 @@ const Z = (function () {
     if (a.kind === 'deploy') {
       const id = p.hand[a.handIdx], cd = card(id);
       if (cd.type !== 'unit' && cd.type !== 'token') return { ok: false, why: 'การ์ดนี้ต้องร่ายเป็น Command/Terrain ไม่ใช่ลงเป็นยูนิต', needType: cd.type };
-      const free = R.unitLimit && unitCount(S, a.side) >= R.unitLimit && cd.type !== 'arcanum';
+      const free = R.unitLimit && unitCount(S, a.side) >= R.unitLimit;
       if (free) return { ok: false, why: `สนามเต็ม (ยูนิตไม่เกิน ${R.unitLimit} ตัว)` };
       p.flare -= cd.cost; p.hand.splice(a.handIdx, 1);
       const u = makeCard(S, id, a.side, a.cell.r, a.cell.c, 'unit');
@@ -846,17 +946,6 @@ const Z = (function () {
       if (t) runHook(S, t.side, t.uid, 'deployHere', { deployerSide: a.side, units: [u] });
       runHook(S, a.side, u.uid, 'deploy', { units: [u] });
       runHook(S, a.side, u.uid, 'action', { units: [u] });
-      return { ok: true, uid: u.uid };
-    }
-    if (a.kind === 'summonArc') {
-      const e = p.extra[a.extraIdx];
-      const cd = card(e.id);
-      if (a.withArc) { p.arcFlareUsed = true; log(S, `✦ ใช้ Arc-Flare เรียก [${cd.name}] (ข้าม Cost ทั้งก้อน)`, 'good'); }
-      else { p.flare -= cd.cost; log(S, `✦ เรียก [${cd.name}] (Flare ${cd.cost})`, 'play'); }
-      e.used = true;
-      const u = makeCard(S, e.id, a.side, a.cell.r, a.cell.c, 'unit');
-      u.arc = true;
-      runHook(S, a.side, u.uid, 'deploy', {});
       return { ok: true, uid: u.uid };
     }
     if (a.kind === 'terrain') {
@@ -933,12 +1022,11 @@ const Z = (function () {
     const attacker = S.cards[a.uid], def = S.cards[a.tgtUid];
     if (!attacker || !def) return { ok: false, why: 'เป้าหมายไม่อยู่แล้ว' };
     if (attacker.rested) return { ok: false, why: 'การ์ดถูกวางนอน (ใช้แอ็คแล้ว)' };
-    const cost = canFreeAttack(S, attacker) ? 0 : R.attackFlare;
-    if (cost > S.players[attacker.side].flare) return { ok: false, why: `โจมตีต้องใช้ Flare ${cost}` };
-    attacker.rested = true;
-    S.players[attacker.side].flare -= cost;
+    /* V.25: การโจมตี = ใช้แอ็คของยูนิต (วางนอน like การเดิน) ไม่หัก Flare */
+    const freeStrike = canFreeAttack(S, attacker);
+    if (!freeStrike) attacker.rested = true;
     const acd = card(attacker.id), dcd = card(def.id);
-    log(S, `⚔ [${acd.name}] โจมตี [${dcd.name}]${cost ? ` (Flare ${cost})` : ' (ไม่ใช้ Flare)'}`, 'attack');
+    log(S, `⚔ [${acd.name}] → [${dcd.name}]${freeStrike ? ' (free attack · ยังตั้ง)' : ' (วางนอนเมื่อการเดิน)'}`, 'attack');
 
     /* 1) Defender's Counter works before Attack */
     runHook(S, def.side, def.uid, 'counter', {});
@@ -970,7 +1058,6 @@ const Z = (function () {
     hook('battleEnd', S, { side: attacker.side, from: attacker.uid, target: def ? def.uid : null });
     return { ok: true };
   }
-
 
   /* =======================================================Queries (legality) */
   function steps(u) { return hasFlag(card(u.id), 'stride') ? 2 : R.movePerAction; }
@@ -1020,7 +1107,7 @@ const Z = (function () {
   }
 
   function legalMoveCells(S, u) {
-    if (u.rested || card(u.id).type === 'arcanum' || u.arc || movementLocked(S, u)) return [];
+    if (u.rested || movementLocked(S, u)) return [];
     const out = [];
     for (let r = 0; r < R.rows; r++) for (let c = 0; c < R.cols; c++) {
       if (r === u.r && c === u.c) continue;
@@ -1034,7 +1121,7 @@ const Z = (function () {
 
   /* โจมตีได้เฉพาะ ช่องหน้า / ซ้าย / ขวา ของตัวเอง (ห้ามตีหลัง) */
   function attackTargets(S, u) {
-    if (u.rested || card(u.id).type === 'arcanum' || u.arc) return [];
+    if (u.rested && !canFreeAttack(S, u)) return [];
     const f = fwd(u.side);
     const dirs = [[f, 0], [0, -1], [0, 1]];
     const out = [];
@@ -1104,22 +1191,6 @@ const Z = (function () {
     return { ok: false, why: 'การ์ดใบนี้ลงไม่ได้' };
   }
 
-  function arcPlayable(S, side) {
-    if (R.arcanum === false) return { ok: false, why: 'บิลด์นี้ยังไม่มี Arcanum' };
-    const p = S.players[side];
-    const ready = p.extra.map((e, i) => ({ e, i })).filter(x => !x.e.used);
-    if (!ready.length) return { ok: false, why: 'Extra Zone ไม่มี Arcanum ที่พร้อมใช้' };
-    const firstAction = S.turnActions === 0;
-    const cells = emptyCells(S, side, [R.backRow[side], R.frontRow[side], R.coreRow]);
-    if (!cells.length) return { ok: false, why: 'ไม่มีช่องว่างสำหรับ Arcanum' };
-    const opt = ready.map(x => ({
-      extraIdx: x.i, id: x.e.id,
-      withArc: p.arcFlareReady && firstAction && !p.arcFlareUsed,
-      payCost: card(x.e.id).cost <= p.flare,
-    }));
-    return opt.some(o => o.withArc || o.payCost) ? { ok: true, cells, options: opt } : { ok: false, why: 'Flare ไม่พอ (หรือใช้ Arc-Flare ไม่ได้)' };
-  }
-
   /* --------- public wrappers (ผ่านหน้าต่างตอบโต้ทุกคน) --------- */
   const actApi = {
     deploy(S, side, handIdx, c) {
@@ -1143,15 +1214,6 @@ const Z = (function () {
       S.turnActions++;
       return openResponse(S, side, { kind: 'command', tgt: tgtUid ? S.cards[tgtUid] : null }, { kind: 'command', handIdx, cell: c || null, tgtUid });
     },
-    summonArc(S, side, extraIdx, c, withArc) {
-      if (S.active !== side) return { ok: false, why: 'ไม่ใช่เทิร์นของคุณ' };
-      const info = arcPlayable(S, side); if (!info.ok) return info;
-      const o = info.options.find(x => x.extraIdx === extraIdx); if (!o) return { ok: false, why: 'เลือกไม่ได้' };
-      if (withArc && !o.withArc) return { ok: false, why: 'ใช้ Arc-Flare ไม่ได้ (ต้องเป็นแอ็คแรกของเทิร์น และ Flare ถึง 8)' };
-      if (!withArc && !o.payCost) return { ok: false, why: 'Flare ไม่พอ' };
-      S.turnActions++;
-      return openResponse(S, side, { kind: 'summonArc' }, { kind: 'summonArc', extraIdx, cell: c, withArc });
-    },
     move(S, side, uid, to) {
       if (S.active !== side) return { ok: false, why: 'ไม่ใช่เทิร์นของคุณ' };
       const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบunit' };
@@ -1162,8 +1224,7 @@ const Z = (function () {
     attack(S, side, uid, tgtUid) {
       if (S.active !== side) return { ok: false, why: 'ไม่ใช่เทิร์นของคุณ' };
       const u = S.cards[uid]; if (!u) return { ok: false, why: 'ไม่พบunit' };
-      const cost = canFreeAttack(S, u) ? 0 : R.attackFlare;
-      if (S.players[side].flare < cost) return { ok: false, why: `โจมตีต้องใช้ Flare ${cost}` };
+      if (u.rested && !canFreeAttack(S, u)) return { ok: false, why: 'ยูนิตนี้วางนอนไปแล้ว (โคงจ = ใช้แอเค็อเมื่อการเดิน)' };
       if (!attackTargets(S, u).some(t => t.uid === tgtUid)) return { ok: false, why: 'เป้าหมายอยู่นอกระยะโจมตี' };
       S.turnActions++;
       return openResponse(S, side, { kind: 'attack', tgt: S.cards[tgtUid], attackerUid: uid }, { kind: 'attack', uid, tgtUid });
@@ -1194,10 +1255,9 @@ const Z = (function () {
     revealOf(S) { return S.reveal; },
   };
 
-
   const API = Object.assign({
     init, startTurn, endTurn, draw, mill, triggerCheck, doAction, openResponse, responseOptions,
-    cardPlayable, arcPlayable, legalMoveCells, attackTargets, canReach, steps, backEmpty, emptyCells, frontCells,
+    cardPlayable, makeCard, legalMoveCells, attackTargets, canReach, steps, backEmpty, emptyCells, frontCells,
     fx, passReq, answer, drainFx, fxq, ask, revealTop, toHand, candidatesFor, helpers, staticOf, hook, cellFx, cellCpBonus, hasFlag, movementLocked, isMultiTerrain, unitAt, cell, card, foe, key, pk, inB, log, canFreeAttack, terrainLimit,
     flareOf, pay, unitCount, rowOwner, canStand, fwd, effCp, units, terrains, R, leaveField, destroyTo, roll,
     list: S => Object.values(S.cards),

@@ -47,7 +47,6 @@
       <button class="zonepile" data-z="deck" title="เด็คศัตรู"><img src="assets/ui/pile-deck.png" alt=""><span id="foeDeckN2">40</span></button>
       <button class="zonepile" data-z="outzone" title="Outzone ศัตรู"><img src="assets/ui/pile-out.png" alt=""><span id="foeOutN">0</span></button>
       <button class="zonepile" data-z="remove" title="Removezone"><img src="assets/ui/pile-remove.png" alt=""><span id="foeRemN">0</span></button>
-      <button class="zonepile" data-z="extra" title="Extra Zone"><img src="assets/ui/pile-extra.png" alt=""><span id="foeExtraN">0</span></button>
     </div>
   </section>
 
@@ -83,7 +82,6 @@
       <button class="zonepile" data-z="deck" title="เด็คคุณ"><img src="assets/ui/pile-deck.png" alt=""><span id="ownDeckN">40</span></button>
       <button class="zonepile" data-z="outzone" title="Outzone คุณ"><img src="assets/ui/pile-out.png" alt=""><span id="ownOutN2">0</span></button>
       <button class="zonepile" data-z="remove" title="Removezone คุณ"><img src="assets/ui/pile-remove.png" alt=""><span id="ownRemN">0</span></button>
-      <button class="zonepile" data-z="extra" title="Extra Zone คุณ"><img src="assets/ui/pile-extra.png" alt=""><span id="ownExtraN">0</span></button>
     </div>
   </section>
 
@@ -137,9 +135,10 @@
   <div id="rpsPanel" class="pick-panel rps hidden">
     <div class="pick-title">เลือกผู้เริ่มก่อน · o / p / s</div>
     <p class="rps-note">ทาย o/p/s — ผู้ที่ชนะเริ่มก่อน · เสมอ = คุณเริ่ม</p>
-    <div class="rps-row">
+    <p class="rps-rule"><b>ค้อน</b> ชนะ <b>กระดาษ</b> · <b>กระดาษ</b> ชนะ <b>กรรไกร</b> · <b>กรรไกร</b> ชนะ <b>ค้อน</b> (เสมอ = คุณเริ่ม)</p>
+      <div class="rps-row">
       <button class="rps-btn" data-rps="paper"><img src="assets/ui/rps-paper.png" alt="กระดาษ"><span>กระดาษ</span></button>
-      <button class="rps-btn" data-rps="scissors"><img src="assets/ui/rps-scissors.png" alt="ค้อนกรรไกร"><span>กรรไกร</span></button>
+      <button class="rps-btn" data-rps="scissors"><img src="assets/ui/rps-scissors.png" alt="กรรไกร"><span>กรรไกร</span></button>
       <button class="rps-btn" data-rps="rock"><img src="assets/ui/rps-rock.png" alt="ค้อน"><span>ค้อน</span></button>
     </div>
   </div>
@@ -164,7 +163,12 @@
     <div class="modal" id="modalHome">
       <img class="home-logo" src="assets/ui/logo.png" alt="ZONEFALL">
       <h1>ZONE<span>FALL</span></h1>
-      <p class="tagline">สนาม 5 แถว × 3 ช่อง · ยูนิตของคุณใน <b>Core Zone (แถว 3)</b> ตอนจบเทิร์น = <b>1 Core Point</b> ต่อใบ · ใครเก็บครบ <b>7</b> ก่อนชนะ · แต่ละฝ่ายเริ่มที่ <b>3 Flare</b></p>
+      <ul class="tagline bullets">
+        <li><b>ยึด Core Zone</b> (แถว 3) ตอน End Phase = 1 แต้มต่อใบ · ใครครบ <b>7</b> ชนะ</li>
+        <li>โจมตี = <b>วางนอน</b> เหมือนการเดิน · <b>ไม่ใช้ Flare</b></li>
+        <li>Trigger Check เปิด <b>1 ใบ</b> เมื่ออีกฝ่ายได้แต้ม · ลดแต้มเหลือ <b>0</b> ไม่ได้</li>
+        <li>เริ่ม <b>3 Flare</b> (+1 ต่อเทิร์น เพดาน 8) · เด็ค 40–60 ใบ · ไม่มี Extra Zone / Arcanum</li>
+      </ul>
       <div class="pick">
         <label>เด็คของคุณ<select id="selOwnDeck"></select></label>
         <label>เด็คศัตรู<select id="selFoeDeck"></select></label>
@@ -179,13 +183,13 @@
           <option value="p1">AI เริ่ม</option>
         </select></label>
       </div>
-      <button class="cta" id="btnStart">เข้าสนาม</button>
+      <button class="cta big" id="btnStart">เข้าสนาม</button>
       <div class="home-links">
         <button class="link-btn" id="btnRules2">กติกา Zonefall</button>
         <button class="link-btn" id="btnCatalog">คาตาล็อกการ์ด</button>
         <button class="link-btn" id="btnImport">ข้อมูลการ์ด/asset</button>
       </div>
-      <p class="seedline">seed <b id="seedTag">—</b> · 52 การ์ดจริง (SB01/SD01/SD04) · ปิด Arcanum ชั่วคราวตามคำสั่ง</p>
+      <p class="seedline">seed <b id="seedTag">—</b> · 52 การ์ดจริง (SB01/SD01/SD04) · rulebook Dev V.25 · โจมตี = วางนอน ไม่ใช้ Flare · Trigger Check 1 ใบ · ตัด Extra Zone / Arcanum แล้ว</p>
     </div>
 
     <div class="modal hidden" id="modalRules"></div>
@@ -195,7 +199,7 @@
       <h2 id="overTitle">—</h2>
       <p id="overDetail" class="tagline"></p>
       <div class="home-links">
-        <button class="cta" id="btnAgain">แข่งอีกครั้ง</button>
+        <button class="cta big" id="btnAgain">แข่งอีกครั้ง</button>
         <button class="link-btn" id="btnOverLog">ดู Log</button>
         <button class="link-btn" id="btnOverHome">เปลี่ยนเด็ค</button>
       </div>
