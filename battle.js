@@ -21,7 +21,7 @@ const ZFStage = (() => {
   function open(o = {}) {
     if (!S.prof) return $('#account-dialog').showModal();
     const legal = legalDecks();
-    if (!legal.length) { toast(T('ยังไม่มีเด็คที่ผ่าน deckcheck · สร้างก่อน', 'no deckcheck-clean deck — build one'), true); return go('decks'); }
+    if (!legal.length) { toast(T('เข้าสนามไม่ได้ · ยังไม่มีเด็คที่ผ่าน deckcheck อย่างน้อย 1 เด็ค → เปิดแผงเด็คให้', 'cannot enter match · need at least one deckcheck-clean deck → opening the deck board'), true); return go('decks'); }
     const own = legal.find(d => d.id === o.own) || legal[0];
     let foe = o.foe;
     if (!foe || (foe !== own.id && !officialKeys().includes(foe) && !legal.some(d => d.id === foe))) foe = pick(officialKeys());

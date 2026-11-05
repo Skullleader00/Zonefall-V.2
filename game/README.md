@@ -29,7 +29,7 @@ python3 -m http.server 3000      # แล้วเปิด http://localhost:300
 | การ์ดที่แก้ ops ให้ตรง text | – | SB01-008 · SB01-016 · SB01-020 · SB01-022 · SD04-001 · SD04-0012 · SD04-002 · SD04-003 (Cast+Trigger) · SD04-006 · SD04-007 |
 | ภาพ/การควบคุม | – | แอนิเมชันช้าลง (~1.6–2×), หน้าเริ่มเล่นใหญ่ขึ้น, เป้าแตะ ≥46–48px ทั้งมือถือ, โทนสี lobby ลากจาก token ของเกม (`--chrome/--flare/--core/--c-*`) + ฟอนต์ Zonefall Display/UI/Num ชุดเดียวกับเกม |
 
-ตรวจอัตโนมัติ: `node test/rules-v25.js` (23 ข้อ) · `node test/card-conditions.js` (23 ข้อ) · `node test/play.js 60` (60 เกม 0 error · ฝ้างต้าเริ่มก่อนปรับเซลยมากคุณ ~65% ตกจาก 78–83%) · `node test/deckcheck.js` · `node test/play.js 10` (0 error) · `node test/coverage.js`
+ตรวจอัตโนมัติ: `node test/rules-v25.js` (27 ข้อ · กติกา V.25) · `node test/card-conditions.js` (23 ข้อ) · `node test/text-vs-ops.js` (ข้อความบนการ์ด ↔ ops · ERROR ต้อง 0) · `node test/unknown-ops.js` (บังคับ AI ลงครบ 3 ชุดcard แล้วหา op ที่ไม่มีกลไก) · `node test/optrace.js 24` · `node test/deckcheck.js` · `node test/play.js 60` (0 error · ฝั่งเริ่มก่อน ~63–65% ลงจาก 78–83% ของ V.24) · `node test/coverage.js`
 
 > หมายเหตุ: `test/interact.js` ค้างที่บรรทัด 71 ในเครื่องทดสอบ — เป็นสภาพเดิมของโค้ดก่อนแก้ (รันจากสำเนาที่ไม่ได้แก้มันค้างที่จุดเดียวกัน) จึงไม่ใช่ regression จาก V.25
 
@@ -97,12 +97,13 @@ ops: `cp` `setPower` `draw` `mill` `discard` `ready` `rest` `move(fwd|back|side)
 
 ```bash
 node test/deckcheck.js                 # กติกาการจัดเด็ค (exit 1 ถ้าผิด)
-node test/interact.js                  # drag & drop + เลือกเป้าหมาย + reveal + Trigger Check + กดค้าง + เลื่อนมือ (24 บททดสอบ)
+node test/interact.js                  # touch/drag + เลือกเป้าหมาย + reveal + Trigger Check (1 ใบ/เทิร์น) + กดค้าง + เลื่อนมือ (28 บททดสอบ)
 node test/optrace.js 24                # สแกน log ทุกเกมหา op ที่ยังไม่ implement / hook error (ต้อง 0)
 node test/coverage.js 40               # นับว่า “การ์ดใบไหนถูกใช้แล้วเอฟเฟกต์ทำงานจริง” ในการจำลอง 160 เกม
 node test/play.js 30 600               # AI vs AI: error / ความยาวเกม / win rate
 node test/play.js 24 600 sylvan sylvan # mirror เพื่อแยก "ผลของฝ่ายเริ่มก่อน" ออกจากเด็ค
-BASE=http://localhost:3000/index.html node test/browser.js   # e2e 5 viewport (ต้องมี playwright)
+BASE=http://localhost:3000/index.html node test/browser.js   # e2e 5 viewport · ตรวจภาพบนtoken (.tk img.naturalWidth) + drag แล้วมียูนิตลงสนาม
+                                     # (browser.js / interact.js หา playwright เองทั้งในโปรเจกต์และ global — ไม่พบจะขอรันอย่างสุภาพ)
 npm start                              # เซิร์ฟเวอร์ท้องถิ่น
 ```
 
@@ -124,3 +125,15 @@ npm start                              # เซิร์ฟเวอร์ท้
    — ส่งลิสต์เด็คจริงมา ผมจะใส่ใน `DECKS` + ตรวจกติกาให้
 3. `handCostReduce` ของใบอย่าง Agrony/Ahenla ใช้ตัวนับ "Terrain ถูกทำลายเทิร์นนี้"
    ถ้ากติกาจริงนับคนละแบบ แจ้งผมได้
+
+
+## ขึ้น build ใหม่ (ทุกครั้งที่แก้โค้ด)
+
+```bash
+cd ..                        # ไปโฟลเดอร์บนสุดของ repo (ข้างโฟลเดอร์ game/)
+python3 tools/stamp.py     # สุม ?v= ให้ index.html + game/index.html + ชื่อ cache ใน game/sw.js ด้วย token เดียวกัน
+```
+
+* สำคัญกับผู้เล่น: เดิม `game/sw.js` เข้าโค้ดด้วย `fetch(req)` ธรรมดา → browser คืน **สำเนาเก่าจาก HTTP cache** ทำให้ ui.js เวอร์ชันที่แก้แล้วไม่ถูกใช้ อาการคือ “ลากการ์ดลงช่องแล้วรูปไม่แสดง/เกมเดินต่อไม่ได้”
+  ตอนนี้โค้ดถูก fetch แบบ `{cache:'no-store'}` + ชื่อ cache ฝัง build token + หน้า page purge cache โค้ดเก่าเมื่อ token เปลี่ยน (`zf.build` / `zf.lobby.build`)
+* ตัวเลข build ของเกมอ่านได้จาก `window.__ZF_BUILD` (ฝั่ง lobby: `window.ZF_BUILD`) — token มาจาก `?v=` บน src ของไฟล์เอง ไม่ต้องแก้ค่าในโค้ดอีก

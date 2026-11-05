@@ -1,9 +1,9 @@
 /* E2E หลาย viewport: boot → o/p/s → AI เล่น 2 ฝั่ง → ตรวจ layout/DOM/image + drag & long-press
    usage: node test/browser.js   env: BASE (default http://localhost:3000/index.html), CHROME, SHOTS=dir */
 const BASE = process.env.BASE || 'http://localhost:3000/index.html';
-let chromium;
-try { ({ chromium } = require('playwright')); }
-catch (e) { console.log('ข้าม: ไม่พบ playwright (npm i -D playwright)'); process.exit(0); }
+const { requirePlaywright } = require('./harness');
+let chromium = (requirePlaywright() || {}).chromium;
+if (!chromium) { console.log('ข้าม: ไม่พบ playwright (npm i -D playwright หรือใส่ path ใน NODE_PATH)'); process.exit(0); }
 
 const VIEWPORTS = [
   { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 844, height: 390 },
@@ -96,7 +96,13 @@ const EXE = process.env.CHROME || '/opt/playwright-browsers/chromium-1209/chrome
       await page.waitForTimeout(250);
       await page.evaluate(() => { const S = window.__ZF.st(); S.active = 'p0'; window.__ZF.U.busy = false; window.__ZF.render(); });
       await page.waitForTimeout(150);
-      const g = await page.locator('#hand .gcard').first().boundingBox();
+      /* อ่านพิกัดจาก DOM ตรงๆ — boundingBox() ของ Playwright ต้องรอ element "เสถียร"
+         ซึ่งบนมือถือมัน ไถลง่ายจาก layout อัตโนมัติของ log/hand ไม่ได้แปลว่าเกมพัง */
+      const g = await page.evaluate(() => { const n = document.querySelector('#hand .gcard'); if (!n) return null;
+        n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); const b = n.getBoundingClientRect();
+        return { x: b.x, y: b.y, width: b.width, height: b.height }; }).catch(() => null);
+      if (!g) { problems.push('drag: ไม่มีการ์ดในมือให้ทดสอบ'); }
+      else {
       const tgt = await page.evaluate(() => { const i = Z.cardPlayable(window.__ZF.st(), 'p0', 0); const t = i && i.ok ? i.cells[0] : null; if (!t) return null;
         const e = [...document.querySelectorAll('.cell')].find(x => +x.dataset.r === t.r && +x.dataset.c === t.c).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2]; });
       if (!tgt) { problems.push('drag: หาช่องวางสำหรับทดสอบไม่ได้'); }
@@ -109,6 +115,7 @@ const EXE = process.env.CHROME || '/opt/playwright-browsers/chromium-1209/chrome
       console.log('      drag result:', JSON.stringify(deployedOrCmd));
       if (!dragging) problems.push('drag: ไม่มี ghost/highlight ระหว่างลาก');
       if (!(deployedOrCmd.units >= 1 || deployedOrCmd.hand === 0)) problems.push('drag & drop: ลากแล้วไม่ทำงาน');
+      }
       await page.evaluate(() => { const S = window.__ZF.st(); if (S.uiAsk) window.__ZF.answer(null); });
       await page.waitForTimeout(500);
       const tkLoc = page.locator('#board .tk.own').first();

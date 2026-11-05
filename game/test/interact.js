@@ -1,9 +1,9 @@
 /* E2E ปฏิสัมพันธ์ + ระบบเลือกเป้าหมาย/เปิดสมุด/ทริกเกอร์ + gesture lock
    usage: node test/interact.js */
 const BASE = process.env.BASE || 'http://localhost:3000/index.html';
-let chromium;
-try { ({ chromium } = require('playwright')); }
-catch (e) { console.log('ข้าม: ไม่พบ playwright'); process.exit(0); }
+const { requirePlaywright } = require('./harness');
+let chromium = (requirePlaywright() || {}).chromium;
+if (!chromium) { console.log('ข้าม: ไม่พบ playwright (npm i -D playwright หรือใส่ path ใน NODE_PATH)'); process.exit(0); }
 
 const fails = [], passes = [];
 const A = (ok, msg) => (ok ? passes : fails).push(msg);
@@ -18,7 +18,10 @@ const A = (ok, msg) => (ok ? passes : fails).push(msg);
   page.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text().slice(0, 160)); });
 
   const settle = () => page.waitForFunction(() => { const S = window.__ZF.st(); return S && !S.pending && !window.__ZF.U.busy && !window.__ZF.U.drag; }, null, { timeout: 15000 }).catch(() => { });
-  const pt = async sel => { const b = await page.locator(sel).first().boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+  /* อ่านกล่องจาก DOM ตรงๆ + scroll เข้า view เอง: boundingBox() ของ Playwright จะรอให้ element
+     “เสถียร” ซึ่งบนโมบาย (390 · isMobile)ayout ขยับตลอดระหว่างลาก — เป็นพฤติกรรมของฮาร์ดเนส ไม่ใช่เกมพัง */
+  const pt = async sel => page.evaluate(s2 => { const n = document.querySelector(s2); if (!n) return null;
+    n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); const b = n.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }, sel);
   const cellPt = (r, c) => page.evaluate(([r2, c2]) => { const e = [...document.querySelectorAll('.cell')].find(x => +x.dataset.r === r2 && +x.dataset.c === c2).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2]; }, [r, c]);
   const drag = async (sel, to) => {
     const f = await pt(sel);
@@ -158,13 +161,29 @@ const A = (ok, msg) => (ok ? passes : fails).push(msg);
     const after = await page.evaluate(() => ({ hand: window.__ZF.st().players.p0.hand.length, out: window.__ZF.st().players.p0.outzone.length }));
     A(after.hand === before + 1, 'เลือก “เก็บขึ้นมือ” → การ์ดเข้ามือปกติ (ไม่เสีย) ' + JSON.stringify(after));
   } else A(true, 'ใบที่เปิดไม่มี Trigger → ขึ้นมืออัตโนมัติ (ask=' + tc.ask + ', inHand=' + tc.inHand + ')');
+  /* V.25 · ครั้งที่สองในเทิร์นเดียวกันต้องไม่เกิด (1 ใบ/ฝ่าย/เทิร์น) */
+  const tcBlock = await page.evaluate(() => {
+    const S = window.__ZF.st();
+    S.uiAsk = null; S.pending = null;
+    const d0 = S.players.p0.deck.length, h0 = S.players.p0.hand.length;
+    Z.triggerCheck(S, 'p0');
+    return { deckSame: S.players.p0.deck.length === d0, handSame: S.players.p0.hand.length === h0,
+      ask: S.uiAsk && S.uiAsk.kind, msg: ((S.log.slice(-1)[0] || {}).msg || '') };
+  });
+  A(tcBlock.deckSame && tcBlock.handSame && /ถูกใช้ไปแล้ว/.test(tcBlock.msg) && !tcBlock.ask,
+    'V.25: Trigger Check ซ้ำในเทิร์นเดียวกันถูกบล็อก ' + JSON.stringify(tcBlock));
+
   const tc2 = await page.evaluate(() => {
     const S = window.__ZF.st();
+    S.uiAsk = null; S.pending = null;
+    S.active = 'p0'; Z.startTurn(S);                 // ขึ้นเทิร์นใหม่ → โควตา Trigger Check รีเซ็ต (engine.js:212)
+    S.players.p0.hand = [];
     const withT = CARDS.filter(c => (c.abilities || []).some(a => a.kw === 'Trigger')).map(c => c.id);
     S.players.p0.deck = [withT[0]].concat(S.players.p0.deck);
     Z.triggerCheck(S, 'p0');
-    return { kind: S.uiAsk && S.uiAsk.kind, card: withT[0] };
+    return { kind: S.uiAsk && S.uiAsk.kind, card: withT[0], tcDone: S.players.p0.tcDone };
   });
+  await page.waitForTimeout(300);
   if (tc2.kind === 'triggerUse') {
     await page.locator('#askActs button').nth(0).click();     // “ใช้เอฟเฟกต์”
     await page.waitForTimeout(500);
@@ -224,6 +243,39 @@ const A = (ok, msg) => (ok ? passes : fails).push(msg);
     return { turn: S.turnNo, winner: S.winner, ask, pts: [S.players.p0.corePoints, S.players.p1.corePoints], tk: document.querySelectorAll('.tk').length };
   });
   A(full.turn > 5, 'เดินเกมต่อด้วยระบบ ask ได้ (' + JSON.stringify(full) + ')');
+
+  /* ── แตะ 2 ครั้ง (การ์ด → ช่อง) = วางตามข้อความใน hint ─────────────── */
+  await settle();
+  const tapSetup = await page.evaluate(() => {
+    const S = window.__ZF.st();
+    /* ล้างสนามก่อน (ถ้า unitLimit เต็ม การ์ดจะลงไม่ได้ =测试结果หลอก) */
+    S.cells.forEach(row => row.forEach(x => { if (x.unit) { delete S.cards[x.unit.uid]; x.unit = null; } }));
+    S.players.p0.hand = ['sd01004', 'sd01006']; S.players.p0.flare = 9; S.active = 'p0';
+    window.__ZF.U.busy = false; window.__ZF.U.sel = null; S.pending = null; S.uiAsk = null;
+    document.getElementById('veil').classList.add('hidden');
+    window.__ZF.render();
+    const g = document.querySelector('#hand .gcard'); const b = g.getBoundingClientRect();
+    return { idx: g.dataset.idx, x: b.x + b.width / 2, y: b.y + b.height / 2, hand: S.players.p0.hand.length };
+  });
+  await page.touchscreen.tap(tapSetup.x, tapSetup.y);
+  await page.waitForTimeout(420);
+  const sel = await page.evaluate(() => ({ kind: (window.__ZF.U.sel || {}).kind, hl: window.__ZF.U.hl.cells.length,
+    marked: document.querySelectorAll('.cell.hl-cell, .cell.drop-ok').length, hint: document.getElementById('hint').textContent.slice(0, 46) }));
+  A(sel.kind === 'hand' && sel.hl > 0, 'แตะการ์ดครั้งแรก → เลือก + ไฮไลต์ช่องที่ลงได้ ' + JSON.stringify(sel));
+  if (sel.kind === 'hand' && sel.hl > 0) {
+    const cellPt2 = await page.evaluate(() => { const k = window.__ZF.U.hl.cells[0];
+      const e = [...document.querySelectorAll('.cell')].find(x => +x.dataset.r === k.r && +x.dataset.c === k.c);
+      const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+    await page.touchscreen.tap(cellPt2[0], cellPt2[1]);
+    await page.waitForTimeout(1200); await settle();
+    const afterTap = await page.evaluate(() => { const S = window.__ZF.st(); const tk = document.querySelector('#board .cell .tk');
+      const img = tk && tk.querySelector('img');
+      return { hand: S.players.p0.hand.length, flare: S.players.p0.flare, tk: document.querySelectorAll('.tk').length,
+        art: img ? { src: (img.getAttribute('src') || '').split('/').pop(), natW: img.naturalWidth, shown: Math.round(img.getBoundingClientRect().width) } : null,
+        sel: (window.__ZF.U.sel || {}).kind, unitOnCell: S.units ? S.units('p0').length : 'no-units-api' }; });
+    A(afterTap.tk >= 1 && afterTap.art && afterTap.art.natW > 100 && afterTap.hand === 1,
+      'แตะช่องที่ไฮไลต์ → ยูนิตลงสนามพร้อมภาพ ' + JSON.stringify(afterTap));
+  }
 
   if (shots()) await page.screenshot({ path: shots() + '/interact.png' });
   console.log('PASS ' + passes.length + '\n  ' + passes.join('\n  '));

@@ -1,5 +1,5 @@
 /* Advance Clash — service worker (offline-first shell) */
-const CACHE = 'zonefall-v11';
+const CACHE = 'zonefall-v12-1793890704-42bc95';
 const SHELL = [
   './', './index.html', './css/game.css',
   './js/data.js', './js/ability-ops.js', './js/engine.js', './js/effects.js', './js/ai.js', './js/ui.js',
@@ -19,7 +19,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled(SHELL.map(u => c.add(u)))).then(() => self.skipWaiting()));
 });
 /* ภาพการ์ด 52 ใบ preload แบบ lazy (ไม่บล็อก boot แล้วค่อย cache ทีละใบ) */
 const CARD_ART = ['SB01-001','SB01-002','SB01-003','SB01-004','SB01-005','SB01-006','SB01-007','SB01-008','SB01-009','SB01-010',
@@ -40,19 +40,23 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;              // ปล่อย Google Fonts ไปที่ network
   if (CODE.test(url.pathname)) {
-    e.respondWith(fetch(req).then(res => {
+    /* cache:'no-store' บังคับแตะ network จริง → แก้โค้ดแล้วผู้ใช้เห็นของใหม่ทันที (เดิมได้สำเนาเก่าจาก HTTP cache) */
+    e.respondWith(fetch(req, { cache: 'no-store' }).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(req, copy));
       return res;
-    }).catch(() => caches.match(req).then(hit => hit || caches.match('./index.html'))));
+    }).catch(() => caches.match(req).then(hit => hit || (req.mode === 'navigate' ? caches.match('./index.html') : Response.error()))));
     return;
   }
   e.respondWith(
-    caches.match(req).then(hit => hit || fetch(req).then(res => {
+    caches.match(req).then(hit => hit || fetch(req, { cache: 'no-store' }).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(req, copy));
       return res;
-    }).catch(() => caches.match('./index.html')))
+    }).catch(() => {
+      if (req.mode === 'navigate') return caches.match('./index.html');
+      return new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } });   /* อย่าส่ง HTML มาแทนภาพ/ฟอนต์ */
+    }))
   );
 });
 

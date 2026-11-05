@@ -6,6 +6,8 @@
    · แอนิเมชันเล่นจาก S.fxq ที่ engine ปล่อยไว้ (drainFx)
    ========================================================================== */
 (function () {
+  /*Zonefall build token — อ่านจาก src ของไฟล์เอง (js/ui.js?v=XXXX) ใช้เทียบว่าเบราว์เซอร์ caching โค้ดเก่ารึไม่ */
+  window.__ZF_BUILD = ((document.currentScript && document.currentScript.src) || '').split('v=')[1] || 'dev';
   const $ = id => document.getElementById(id);
   const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -107,8 +109,8 @@
       const cd = card(u.id);
       UI.pos[u.uid] = [r, c];
       const tk = el('div', 'tk ' + (u.side === human ? 'own' : 'foe') + (u.rested ? ' rested' : '')
-        (UI.sel && UI.sel.kind === 'unit' && UI.sel.uid === u.uid ? ' sel' : ''));
-      tk.dataset.uid = u.uid; tk.dataset.cardId = u.id; tk.dataset.cardId = u.id;
+        + (UI.sel && UI.sel.kind === 'unit' && UI.sel.uid === u.uid ? ' sel' : ''));
+      tk.dataset.uid = u.uid; tk.dataset.cardId = u.id;
       const fl = [];
       if (u.fused && u.fused.length) fl.push('<i class="tough">FUSED ×' + u.fused.length + '</i>');
       if (u.noDestroyBattle) fl.push('<i class="tough">ไม่ล้ม</i>');
@@ -876,7 +878,16 @@
     hint(defaultHint());
     window.__ZF = { U: UI, Z, ZAI, aiGo, render: () => render(), st: () => UI.S, answer, showCard };
     openModal('modalHome');
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(reg => {
+    /* build token มาจาก ?v= บน URL ของตัวไฟล์เอง → ไม่ต้องแก้ค่าในโค้ดทุก lần release */
+    const BUILD = window.__ZF_BUILD || 'dev';
+    try {
+      if (localStorage.getItem('zf.build') !== BUILD) {
+        localStorage.setItem('zf.build', BUILD);
+        if ('caches' in window) caches.keys().then(ks => Promise.all(ks.filter(k => k.indexOf(BUILD) < 0).map(k => caches.delete(k)))).catch(() => { });
+        if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => { try { r.update(); } catch (x) { } })).catch(() => { });
+      }
+    } catch (e) { /* private mode */ }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=' + BUILD).then(reg => {
       setTimeout(() => { try { reg.active && reg.active.postMessage('warm-art'); } catch (x) { } }, 4000);
     }).catch(() => { });
   }

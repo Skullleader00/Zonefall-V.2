@@ -48,7 +48,8 @@ const hashPw = (u, p) => { let h = 2166136261 >>> 0; const s = u.toLowerCase() +
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
 function newProf(name) {
   const vault = {}; CARDS.forEach(c => vault[c.id] = 3);
-  return { name, pw: '', created: Date.now(), coins: 20000, vault, decks: [], activeDeck: null, equipped: { field: 'FIELD-BLUE', avatar: 'AV-G', sleeve: 'SLV-KRAFT', frame: 'FRM-HEX' },
+  const seed = starterDeck('Green');
+  return { name, pw: '', created: Date.now(), coins: 20000, vault, decks: [seed], activeDeck: seed.id, equipped: { field: 'FIELD-BLUE', avatar: 'AV-G', sleeve: 'SLV-KRAFT', frame: 'FRM-HEX' },
     unlocked: ['FIELD-BLUE', 'AV-G', 'SLV-KRAFT', 'FRM-HEX'], redeemed: [], wins: 0, losses: 0, rp: 0, packs: 0, seen_packs: {},
     matches: [], events: {}, watchRooms: [], winStreak: 0, bio: '' };
 }
@@ -60,11 +61,22 @@ function register(name, pw) {
 function login(name, pw) {
   const u = DB.users[name.toLowerCase()];
   if (!u || u.pw !== hashPw(name, pw)) return T('บัญชีหรือรหัสผ่านไม่ถูกต้อง', 'wrong login/password');
-  S.name = name; S.prof = u; localStorage.setItem('zf.session', name); syncLobbyDecks(); return null;
+  S.name = name; S.prof = u; localStorage.setItem('zf.session', name);
+  if (ensureStarter(u)) { DB.users[name.toLowerCase()] = u; dbSave(); }
+  syncLobbyDecks(); return null;
 }
 function logout() { S.name = null; S.prof = null; localStorage.removeItem('zf.session'); }
+/* บัญชีเก่าที่ kosong เด็ค (บั๊กเดิม: decks = [] ทำให้เข้าสนามไม่ได้เลย) → ใส่เด็คตัวอย่างให้ */
+function ensureStarter(p) {
+  if (!p) return false;
+  if (!Array.isArray(p.decks)) p.decks = [];
+  if (p.decks.length) return false;
+  const seed = starterDeck('Green'); p.decks = [seed]; p.activeDeck = seed.id; return true;
+}
 function restore() { const n = localStorage.getItem('zf.session');
-  if (n && DB.users[n.toLowerCase()]) { S.name = n; S.prof = DB.users[n.toLowerCase()]; return true; } return false; }
+  if (n && DB.users[n.toLowerCase()]) { S.name = n; S.prof = DB.users[n.toLowerCase()];
+    if (ensureStarter(S.prof)) { DB.users[S.name.toLowerCase()] = S.prof; dbSave(); }
+    return true; } return false; }
 const P = () => S.prof;
 function save() { if (S.prof) { DB.users[S.name.toLowerCase()] = S.prof; dbSave(); syncLobbyDecks(); } }
 function grant(o) {
@@ -77,7 +89,7 @@ function grant(o) {
 }
 const tally = () => { try { return JSON.parse(localStorage.getItem(TALLY) || '{"w":0,"l":0}'); } catch (e) { return { w: 0, l: 0 }; } };
 
-/* ── deck model · main+extra · rulebook V.24 ─────────────────── */
+/* ── deck model · กองหลักอย่างเดียว (V.25 ไม่มี Extra Zone) ───────── */
 const R = RULES;
 const deckMain = d => d.main.map(x => CARD(x.id)).filter(Boolean);
 const deckExtra = d => (d.extra || []).map(x => CARD(x.id)).filter(Boolean);
@@ -136,7 +148,7 @@ function syncLobbyDecks() {
   if (!S.prof && !S.name) return;
   const all = {};
   (S.prof?.decks || []).forEach(d => {
-    if (d.official) return;
+    /* เด็คที่คัดลอกจาก list ทางการ (official:true) ก็ต้องส่งให้ engine ด้วย ไม่งั้น open() เลือกแล้วไม่มีจริง */
     const e = expand(d); const st = colorStat(d);
     all[d.id] = { name: d.name, color: st.primary || d.color || 'Colorless', main: e.main, extra: [], at: Date.now() };
   });
@@ -1235,6 +1247,16 @@ async function boot() {
   syncLobbyDecks();
   wireChrome(); wireDialogs(); setLang(LANG);
   $('#boot').classList.add('done');
+  /* ถ้า build เปลี่ยน = มีโค้ดใหม่ → ทิ้ง cache ของโค้ดเก่า + บังคับ SW อัปเดต (ไม่แตะ cache ภาพ) */
+  const BUILD = ((document.querySelector('script[src*="app.js"]') || {}).src || '').split('v=')[1] || 'dev';
+  window.ZF_BUILD = BUILD;
+  try {
+    if (localStorage.getItem('zf.lobby.build') !== BUILD) {
+      localStorage.setItem('zf.lobby.build', BUILD);
+      if ('caches' in window) caches.keys().then(ks => Promise.all(ks.filter(k => !/asset|img|art/i.test(k)).map(k => caches.delete(k)))).catch(() => { });
+      if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => { try { r.update(); } catch (x) { } })).catch(() => { });
+    }
+  } catch (e) { /* private mode */ }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   const menu = new URLSearchParams(location.search).get('menu') || 'lobby';
   go(menu, false);

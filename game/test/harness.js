@@ -41,3 +41,20 @@ module.exports = (code) => {
 };
 module.exports.SRC = SRC;
 module.exports.stubs = { window: windowStub, document: documentStub };
+
+/* หา playwright ให้เจอแม้ติดตั้งแบบ global (NODE_PATH / /usr/lib/node_modules / npm root -g) */
+function requirePlaywright() {
+  const tries = ['playwright', 'playwright-core', 'playwright/chromium'];
+  const roots = (process.env.NODE_PATH || '').split(':')
+    .concat(['/usr/lib/node_modules', '/usr/local/lib/node_modules']);
+  try { roots.unshift(require('child_process').execSync('npm root -g', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()); } catch (e) { }
+  for (const m of tries) { try { const r = require(m); if (r.chromium || r.chromium === undefined && r) return r.chromium ? r : { chromium: r }; } catch (e) { } }
+  const { Module } = require('module');
+  for (const root of roots) { if (!root) continue;
+    for (const pkg of ['playwright', 'playwright-core']) {
+      const p = require('path').join(root, pkg);
+      try { Module._initPaths(); const r = require(p); if (r && r.chromium) return r; } catch (e) { }
+    } }
+  return null;
+}
+module.exports.requirePlaywright = requirePlaywright;
