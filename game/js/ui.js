@@ -743,7 +743,7 @@
     <p>1) <code>revealAdd n:-1</code> ของใบที่ใช้ “จำนวนยูนิต Blue/Adventurer ที่คุมอยู่” ยังนับตามข้อความที่ OCR มา<br>
     2) การเรียงการ์ดใต้สมุด “ตามใจชอบ” (place … in any order) ระบบเรียงตามที่เปิดมา (รอ UI เรียงลำดับแบบลาก)<br>
     3) ใบที่ระบุเงื่อนไขซับซ้อน ([In Hand] ลด Cost ตาม Terrain ที่ทำลายในเทิร์น) ใช้ตัวนับจริงแล้ว<br>
-    4) ผู้ที่เริ่มทีหลังไม่จั่วในเทิร์นแรก (ตาม rulebook)</p></section>`;
+    4) ฝ่ายที่<b>เริ่มก่อน</b>ไม่จั่วในเทิร์นแรก (ตาม Official rulebook V.25 §2/Q12)</p></section>`;
 
   const RULESUM = () => `
   <h2>กติกา Zonefall <small>${R.version}</small></h2>
@@ -754,9 +754,10 @@
     <section><h3>Flare &amp; แอ็ค</h3><p>แต่ละฝ่ายเริ่มที่ <b>${R.flareStart} Flare</b> แล้วบวก +1 ทุกเทิร์นของตัวเองจนถึงเพดาน ${R.flareMax} · ไม่สะสมข้ามเทิร์น · ใช้สำหรับลงการ์ด / ร่าย Command / วาง Terrain / กด [Activate]<br><b>กติกา V.25:</b> การ<b>โจมตีไม่ใช้ Flare</b> แต่กินแอ็คของยูนิต — หลังโจมตี (หรือหลังเดิน) ยูนิตจะ<b>วางนอน (rest)</b>เหมือนกัน · เดินได้ 1 ช่องต่อแอ็ค · โจมตีได้เฉพาะช่องข้างหน้า/ซ้าย/ขวา</p></section>
     <section><h3>แอ็คของยูนิต</h3><p>ยูนิต 1 ตัวทำอะไร<b>อย่างเดียวต่อเทิร์น</b>: เดิน 1 ช่อง · โจมตี · หรือใช้ [Action]/[Activate] แล้วยอมวางนอน · การ์ดที่ลงใหม่จะถูกวางนอน ต้องรอต้นเทิร์นถัดไปจึงขยับ/โจมตีได้ · การ์ดที่มีเงื่อนไข “cannot move / cannot attack” ระบบล็อกให้เอง</p></section>
     <section><h3>ต่อสู้ (Persistent Power)</h3><p>ประกาศโจมตี → <b>ตอบโต้ 1 ครั้ง</b> → Counter ของผู้ป้องกัน → Attack ของผู้โจมตี → เอา CP ผู้โจมตีไปลบ CP ผู้ป้องกัน เหลือ 0 = ไป Outzone · ผู้โจมตีไม่เสียค่าพลัง · รีเซ็ตต้นเทิร์น · โจมตีได้เฉพาะหน้า/ซ้าย/ขวา</p></section>
-    <section><h3>Trigger Check (V.25)</h3><p>เช็คได้<b>เฉพาะตอนอีกฝ่ายได้ Core Point</b>เท่านั้น · แต่ละครั้งเปิด<b>1 ใบ</b> ไม่ว่าจะกวี้แต้มก็ตาม · และ<b>ได้ครั้งเดียวต่อฝ่ายต่อเทิร์น</b> · การ์ดที่เปิดเด้งขึ้นให้เห็น · ถ้ามี [Trigger] <b>เจ้าของเลือกเอง</b>ว่าจะใช้เอฟเฟกต์หรือเก็บขึ้นมือ</p></section>
+    <section><h3>Trigger Check (Official V.25)</h3><p>เกิด<b>ทุกครั้งที่อีกฝ่ายได้ Core Point</b> · แต่ละครั้งเปิด<b>1 ใบ</b> (แม้ได้หลายแต้มพร้อมกันก็เปิดแค่ 1 ใบ) · <b>ไม่มีล็อกครั้งเดียวต่อเทิร์น</b> · การ์ดที่เปิดเด้งขึ้นให้เห็น · ถ้ามี [Trigger] <b>เจ้าของเลือกเอง</b>ว่าจะใช้เอฟเฟกต์หรือเก็บขึ้นมือ</p></section>
     <section><h3>การลด Core Point (V.25)</h3><p>เอฟเฟกต์ที่<b>ลด</b>แต้มอีกฝ่ายทำได้มากสุดคือเหลือ <b>1</b> — ทำให้ตกเป็น 0 ไม่ได้ · ฝ่ายที่ 0 อยู่แล้วก็อยู่ที่ 0 ต่อ (ไม่ถูกดันขึ้น) · ครบ ${R.corePointsToWin} แต้m=ชนะทันที</p></section>
-    <section><h3>โควตา · โซน · การจัดเด็ค</h3><p>บนสนาม: ยูนิต ≤ ${R.unitLimit} · Terrain ≤ ${R.terrainLimitBase} (ใบ multiTerrain เช่น Sylvan ไม่กินโควตา และ Terrain ไม่บล็อกทางเดิน) · มือ ≤ ${R.handMax} (เกิน → Removezone)<br>เด็ค: <b>${R.deckMin}–${R.deckMax}</b> ใบ · ซ้ำชื่อละ ≤ ${R.maxCopy} · สีหลัก ≥ 50% · คู่สีรองมีได้ 1 สี · [Protection] ≤ ${R.protectionLimit} · <b>ไม่มี Extra Zone แล้ว</b> — กองที่กดดูได้: เด็ค / Outzone / Removezone</p></section>
+    <section><h3>การเริ่มเกม · Mulligan (Official V.25)</h3><p>มือแรก <b>${R.handStart} ใบ</b> · เลือก <b>Mulligan ได้ 1 ครั้ง</b>: เอาการ์ดสูงสุด ${R.mulliganCount} ใบไปใต้เด็ค → จั่วใหม่เท่าจำนวน → สับเด็ค · <b>ฝ่ายเริ่มก่อนไม่จั่วในเทิร์นแรก</b> · ไม่จำกัดขนาดมือ</p></section>
+    <section><h3>โควตา · โซน · การจัดเด็ค</h3><p>บนสนาม: ยูนิต ≤ ${R.unitLimit} · Terrain ≤ ${R.terrainLimitBase} (วางใบใหม่ = <b>Overwrite</b> ส่งใบเดิมลง Outzone ไม่ถือถูกทำลาย; ใบ multiTerrain เช่น Sylvan ไม่กินโควตา และ Terrain ไม่บล็อกทางเดิน)<br>เด็ค: <b>${R.deckMin}–${R.deckMax}</b> ใบ · ซ้ำชื่อละ ≤ ${R.maxCopy} · สีหลัก ≥ 50% · คู่สีรองมีได้ 1 สี · [Protection] ≤ ${R.protectionLimit} · <b>ไม่มี Extra Zone แล้ว</b> — กองที่กดดูได้: เด็ค / Outzone / Removezone</p></section>
     <section><h3>บิลด์นี้ไม่มีอะไร</h3><p><b>Arcanum / Arc-Flare</b> และ <b>Extra Zone</b> ถูกตัดออกตามกติกา V.25 · เสียงประกอบยังไม่ได้ต่อ · หน้า Lobby ด้านนอกมี deck builder + deckcheck แล้วส่งเด็คเข้ามาแข่งในหน้านี้ได้</p></section>
     ${ASSUMPTIONS}
   </div>`;
@@ -801,7 +802,44 @@
     $('seedTag').textContent = UI.S.seed;
     closeModal(); document.body.classList.add('ingame');
     render();
-    if (UI.S.active === human) banner('YOUR TURN', false, 700); else aiGo();
+    // rulebook V.25 §2: ให้ผู้เล่นเลือก Mulligan มือแรกก่อนเริ่มเดินเกม
+    offerMulligan(() => {
+      if (UI.S.active === human) banner('YOUR TURN', false, 700); else aiGo();
+    });
+  }
+  /* หน้าต่าง Mulligan: เลือกสูงสุด 3 ใบจากมือแรก (ครั้งเดียว) แล้วจั่วใหม่/Keep */
+  function offerMulligan(done) {
+    const S = UI.S; if (!S) return done();
+    const p = S.players[human];
+    if (p.mulliganed || !p.hand.length) return done();
+    const max = (Z.R && Z.R.mulliganCount) || 3;
+    const sel = UI.mullSel = [];
+    const box = $('mullCards'); box.innerHTML = '';
+    const go = $('mullGo');
+    const refresh = () => {
+      go.textContent = `Mulligan (${sel.length}/${max})`;
+      go.disabled = sel.length === 0;
+    };
+    p.hand.forEach((id, i) => {
+      const cd = card(id); if (!cd) return;
+      const b = el('button', 'ask-card', `
+        <img src="${scanOf(cd)}" alt="">
+        <span class="k">${kindLine(cd)}</span>
+        <b>${esc(cd.name)}</b>
+        <i>${cd.color || ''}${cd.cp ? ' · CP ' + cd.cp.toLocaleString() : ''}</i>`);
+      b.addEventListener('click', () => {
+        const k = sel.indexOf(i);
+        if (k >= 0) { sel.splice(k, 1); b.classList.remove('on'); }
+        else if (sel.length < max) { sel.push(i); b.classList.add('on'); }
+        refresh();
+      });
+      box.appendChild(b);
+    });
+    const close = () => { $('mullPanel').classList.add('hidden'); $('mullVeil').classList.add('hidden'); done(); };
+    $('mullKeep').onclick = () => { Z.mulligan(S, human, []); render(); close(); };
+    go.onclick = () => { const r = Z.mulligan(S, human, sel.slice()); if (r && r.ok) render(); close(); };
+    $('mullPanel').classList.remove('hidden'); $('mullVeil').classList.remove('hidden');
+    refresh();
   }
   const BEATS = { paper: 'scissors', scissors: 'rock', rock: 'paper' };
   async function chooseByRps() {

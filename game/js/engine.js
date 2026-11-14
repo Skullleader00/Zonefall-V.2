@@ -115,7 +115,7 @@ const Z = (function () {
         side, deckKey: dk, deckName: D.name, faction: D.color,
         deck: shuffle(D.main.slice(), rng), hand: [], outzone: [], remove: [],
         stats: { terrainDestroyed: 0, commandPlayed: 0, operationPlayed: 0, pointsGained: 0, readyByEffect: 0, playedByUnitEffect: 0 },
-        flare: 0, myTurns: 0, corePoints: 0, tcDone: false,
+        flare: 0, myTurns: 0, corePoints: 0, tcDone: false, mulliganed: false,
       };
     });
     ['p0', 'p1'].forEach(side => { for (let i = 0; i < R.handStart; i++) draw(S, side); });
@@ -132,8 +132,8 @@ const Z = (function () {
     for (let i = 0; i < n; i++) {
       if (!p.deck.length) { log(S, `${p.deckName} จั่วไม่ได้อย่างทันที — พ่ายแพ้`, 'bad'); S.winner = foe(side); return; }
       const id = p.deck.shift();
-      if (p.hand.length >= R.handMax) { p.remove.push(id); log(S, `มือเกิน ${R.handMax} — [${card(id).name}] ออกจากเกม (Removezone)`, 'bad'); }
-      else p.hand.push(id);
+      // rulebook V.25: ไม่จำกัดขนาดมือ (ถอดเพดาน handMax ออก) → เข้ามือเสมอ
+      p.hand.push(id);
     }
   }
 
@@ -156,8 +156,8 @@ const Z = (function () {
   function toHand(S, side, id) {
     const p2 = S.players[side];
     if (!id) return;
-    if (p2.hand.length >= R.handMax) { p2.remove.push(id); log(S, `  ↳ มือเต็ม ${R.handMax} — [${card(id).name}] ออกจากเกม (Removezone)`, 'bad'); }
-    else p2.hand.push(id);
+    // rulebook V.25: ไม่จำกัดขนาดมือ → เข้ามือเสมอ
+    p2.hand.push(id);
   }
 
   function mill(S, side, n) {
@@ -168,6 +168,25 @@ const Z = (function () {
     }
     for (let i = 0; i < n; i++) { if (!p.deck.length) break; p.outzone.push(p.deck.shift()); }
     log(S, `Mill ${n} → Outzone (${p.deckName})`, 'dim');
+  }
+
+  /* rulebook V.25 §2: Mulligan 1 ครั้ง — เลือกได้สูงสุด 3 ใบ (mulliganCount)
+     → นำใบที่เลือกไปเรียงใต้เด็ค → จั่วใหม่เท่าจำนวนที่เลือก → สับเด็ค
+     เลือก 0 ใบ = Keep (สละสิทธิ์) */
+  function mulligan(S, side, handIdxs) {
+    const p = S.players[side];
+    if (p.mulliganed) return { ok: false, why: 'ใช้ Mulligan ไปแล้ว (ได้ครั้งเดียว)' };
+    const idxs = [...new Set((handIdxs || []).filter(i => Number.isInteger(i) && i >= 0 && i < p.hand.length))];
+    if (idxs.length > (R.mulliganCount || 3)) return { ok: false, why: `เลือกได้สูงสุด ${R.mulliganCount || 3} ใบ` };
+    p.mulliganed = true;
+    if (!idxs.length) { log(S, `↻ ${p.deckName} Keep มือแรก (ไม่ Mulligan)`, 'dim'); return { ok: true, mulliganed: 0 }; }
+    const ids = idxs.map(i => p.hand[i]);
+    idxs.sort((a, b) => b - a).forEach(i => p.hand.splice(i, 1));   // ตัดออกจากมือ (index สูงก่อน)
+    ids.forEach(id => p.deck.push(id));                              // ไปใต้เด็ค
+    for (let k = 0; k < ids.length && p.deck.length; k++) p.hand.push(p.deck.shift()); // จั่วใหม่จากยอด
+    shuffle(p.deck, S.rngFn);                                        // สับเด็ค
+    log(S, `↻ ${p.deckName} Mulligan ${ids.length} ใบ → จั่วใหม่ + สับเด็ค`, 'info');
+    return { ok: true, mulliganed: ids.length };
   }
 
   function makeCard(S, id, side, r, c, type) {
@@ -217,8 +236,9 @@ const Z = (function () {
     p.flare = Math.min(R.flareMax, (R.flareStart || 1) + p.myTurns - 1);
     /* รีเซ็ตสถานะทั้งสนาม: ค่าพลังกลับเป็นพื้นฐาน (rulebook: รีเซ็ตเมื่อเริ่มเทิร์นใหม่) */
     units(S).forEach(u => { u.rested = false; u.dmg = 0; u.battleCp = 0; u.buffCp = 0; u.used = {}; u.noDestroyBattle = false; u.setPowerBase = null; });
-    const skipFirstDraw = R.secondPlayerNoFirstDraw && p.myTurns === 1 && side !== S.first;
-    if (skipFirstDraw) log(S, `${p.deckName} (ฝ่ายเริ่มทีหลัง) ไม่จั่วในเทิร์นแรก`, 'dim');
+    /* rulebook V.25 §2/Q12: ฝ่ายที่เริ่มก่อน (First Player) ไม่จั่วในเทิร์นแรก */
+    const skipFirstDraw = R.firstPlayerNoFirstDraw && p.myTurns === 1 && side === S.first;
+    if (skipFirstDraw) log(S, `${p.deckName} (ฝ่ายเริ่มก่อน) ไม่จั่วในเทิร์นแรก`, 'dim');
     else draw(S, side);
     log(S, `— เทิร์น ${p.myTurns} (${S.turnNo}) ของ ${p.deckName} · Flare ${p.flare} —`, 'turn');
     S.phase = 'main';
@@ -252,7 +272,8 @@ const Z = (function () {
      ถ้าไม่ใช้ (หรือไม่มีเอฟเฟกต์) การ์ดขึ้นมือตามปกติ */
   function triggerCheck(S, side) {
     const p = S.players[side];
-    /* V.25: Trigger Check เปิดได้ 1 ใบ/ครั้ง และจะเกิดขึ้นเคราเมื่ออีกฝ้ายไu0e14้เท่าเกีดขึ้น (ไม่มากกันครั้งต่ากเติก เครา 1 ไบเท่านั้น) */
+    /* rulebook V.25 §7/Q5: Trigger Check เกิดทุกครั้งที่อีกฝ่ายได้แต้ม (เปิด 1 ใบ/ครั้ง, หลายแต้มพร้อมกัน = 1 ใบ)
+       — triggerCheckOncePerTurn=false จึงไม่มีการล็อก 1 ครั้ง/เทิร์นอีกต่อไป */
     if (R.triggerCheckOncePerTurn !== false) {
       if (p.tcDone) { log(S, `⟐ Trigger Check (${p.deckName}) — ถูกใช้ไปแล้วในเทิร์นนี้`, 'dim'); return; }
       p.tcDone = true;
@@ -1256,7 +1277,7 @@ const Z = (function () {
   };
 
   const API = Object.assign({
-    init, startTurn, endTurn, draw, mill, triggerCheck, doAction, openResponse, responseOptions,
+    init, startTurn, endTurn, draw, mill, mulligan, triggerCheck, doAction, openResponse, responseOptions,
     cardPlayable, makeCard, legalMoveCells, attackTargets, canReach, steps, backEmpty, emptyCells, frontCells,
     fx, passReq, answer, drainFx, fxq, ask, revealTop, toHand, candidatesFor, helpers, staticOf, hook, cellFx, cellCpBonus, hasFlag, movementLocked, isMultiTerrain, unitAt, cell, card, foe, key, pk, inB, log, canFreeAttack, terrainLimit,
     flareOf, pay, unitCount, rowOwner, canStand, fwd, effCp, units, terrains, R, leaveField, destroyTo, roll,

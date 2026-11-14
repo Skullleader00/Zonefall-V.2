@@ -10,21 +10,22 @@
 
 const RULES = {
   name: 'Zonefall',
-  version: 'Dev V.25 - digital build v1.5 (52 real cards | attack = rest, no Flare cost | Trigger Check 1 card per check | Core Point cannot drop to 0 | no Extra Zone, no Arcanum )',
+  version: 'Official V.25 - digital build v1.5 (52 real cards | attack = rest, no Flare cost | Trigger Check fires on every scoring event, 1 card each | Core Point cannot drop below 1 | no hand cap | no Extra Zone, no Arcanum | first player skips turn-1 draw | Mulligan 1x: 3 to bottom, draw 3)',
   rows: 5, cols: 3, coreRow: 2,
   backRow: { p0: 4, p1: 0 }, frontRow: { p0: 3, p1: 1 },
   corePointsToWin: 7,
   flareMax: 8,
   flareStart: 3,               // แต่ละฝ่ายเริ่มที่ 3 Flare แล้วบวกขึ้นทีละ 1 ต่อเทิร์น (เพดาน 8)
   unitLimit: 4, terrainLimitBase: 1,
-  handStart: 4, handMax: 10,
+  handStart: 6,                // rulebook V.25 §2: มือแรก 6 ใบ
+  mulliganCount: 3,            // rulebook V.25 §2: Mulligan 1 ครั้ง (3 ใบลงใต้เด็ค + จั่วใหม่ 3)
   deckMin: 40, deckMax: 60, maxCopy: 3,
-  attackFlare: 0,      // rulebook V.25: attacking is an action that Rests the unit (like moving) - it costs no Flare
+  attackFlare: 0,      // rulebook: attacking is an action that Rests the unit (like moving) - it costs no Flare
   movePerAction: 1,    // 1 space per action, free
   attackRests: true,   // attack consumes the unit's action by Resting it
-  corePointFloor: 1,   // losing Core Points can never take a score from >=1 down to 0
-  triggerCheckOncePerTurn: true, // one Trigger Check (1 card) per player per turn, only when the opponent gains a point
-  secondPlayerNoFirstDraw: true,
+  corePointFloor: 1,   // losing Core Points can never take a score from >=1 down to 0 (พิมพ์บนหน้าการ์ด)
+  triggerCheckOncePerTurn: false, // rulebook V.25 §7/Q5: เช็คทุกครั้งที่อีกฝ่ายได้แต้ม (1 ใบ/ครั้ง)
+  firstPlayerNoFirstDraw: true,   // rulebook V.25 §2/Q12: ฝ่ายเริ่มก่อนไม่จั่วในเทิร์นแรก
   combatVariant: 'persistent',
   protectionLimit: 6,
 };

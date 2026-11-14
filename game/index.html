@@ -110,6 +110,18 @@
     <div class="pick-act" id="askActs"></div>
   </div>
 
+  <!-- ============ Mulligan (มือแรก · เลือกสูงสุด 3 ใบ) ============ -->
+  <div id="mullVeil" class="guard-veil hidden"></div>
+  <div id="mullPanel" class="pick-panel hidden">
+    <div class="pick-title">Mulligan · มือแรก</div>
+    <p class="rps-note">เลือกการ์ดที่ไม่ต้องการได้สูงสุด <b>3 ใบ</b> → จะถูกย้ายไปใต้เด็คแล้วจั่วใหม่ · หรือ <b>Keep</b> เพื่อเก็บมือนี้ไว้ (ทำได้ครั้งเดียว)</p>
+    <div class="ask-cards" id="mullCards"></div>
+    <div class="pick-act">
+      <button class="parallelogram no" id="mullKeep">Keep (ไม่สลับ)</button>
+      <button class="parallelogram yes" id="mullGo" disabled>Mulligan (0/3)</button>
+    </div>
+  </div>
+
   <!-- ============ Declaration-Response ============ -->
   <div id="guardVeil" class="guard-veil hidden"></div>
   <div id="guardBar" class="guard-bar hidden">
