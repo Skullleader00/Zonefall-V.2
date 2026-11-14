@@ -1,5 +1,5 @@
 /* Advance Clash — service worker (offline-first shell) */
-const CACHE = 'zonefall-v12-1793890704-42bc95';
+const CACHE = 'zonefall-v12-1794666048-ea7644';
 const SHELL = [
   './', './index.html', './css/game.css',
   './js/data.js', './js/ability-ops.js', './js/engine.js', './js/effects.js', './js/ai.js', './js/ui.js',
