@@ -269,7 +269,7 @@ const CARDS = [
     abilities: [
       { kw: 'Cont', when: 'cont', text: 'During your turn, if you have 10 or less cards in your Out Zone, this unit cannot move.', ops: [], req: [{"kind":"outzoneMax","min":10}] },
       { kw: 'Activate', cost: 2, once: true, text: 'If you do, and you have 12 or more cards in your Out Zone: Ready this unit. Return 2 Green cards from your Out Zone to the bottom of your deck in any order.', ops: [{"op":"ready","to":"self"},{"op":"outzoneToBottom","filter":"Green","n":2}], req: [{"kind":"outzoneMin","min":12}] },
-      { kw: 'Trigger', text: 'If you have 12 or more cards in your Out Zone, play this unit onto your front row. If not, Mill 4.', ops: [{"op":"mill","n":4}], req: [{"kind":"outzoneMin","min":12}] }
+      { kw: 'Trigger', text: 'If you have 12 or more cards in your Out Zone, play this unit onto your front row. If not, Mill 4.', ops: [{"op":"if","cond":{"kind":"outzoneGte","value":12},"then":[{"op":"deploySelf","row":"front"}],"else":[{"op":"mill","n":4}]}] }
     ],
   },
   {
@@ -279,7 +279,7 @@ const CARDS = [
     protection: false,
     abilities: [
       { kw: 'Activate', once: true, text: 'Rest 1 Terrain card in the space this unit occupies: Ready this unit.', ops: [{"op":"ready","to":"self"}] },
-      { kw: 'Attack', when: 'attack', text: 'Mill 1. Then, if you have 10 or more cards in your Out Zone, this unit gains +3000 Power until end of turn.', ops: [{"op":"mill","n":1},{"op":"cp","to":"self","n":3000,"dur":"turn","color":null,"tribe":null}], req: [{"kind":"outzoneMin","min":10}] },
+      { kw: 'Attack', when: 'attack', text: 'Mill 1. Then, if you have 10 or more cards in your Out Zone, this unit gains +3000 Power until end of turn.', ops: [{"op":"mill","n":1},{"op":"cp","to":"self","n":3000,"dur":"turn","color":null,"tribe":null,"req":[{"kind":"outzoneMin","min":10}]}] },
       { kw: 'Trigger', text: 'Mill 2.', ops: [{"op":"mill","n":2}] }
     ],
   },
@@ -289,7 +289,7 @@ const CARDS = [
     cost: 5, cp: 2000,
     protection: false,
     abilities: [
-      { kw: 'On Play', when: 'deploy', text: 'Mill 1. Choose 1 Green unit with cost 4 or less from your Out Zone; play that unit to your back row Rested. If you have 10 or more cards in your Out Zone, you may play it to your front row instead.', ops: [{"op":"mill","n":1},{"op":"playFromOutzone","filter":"Green","maxCost":4},{"op":"playOutzoneRest","row":"front"}], req: [{"kind":"outzoneMin","min":10}] },
+      { kw: 'On Play', when: 'deploy', text: 'Mill 1. Choose 1 Green unit with cost 4 or less from your Out Zone; play that unit to your back row Rested. If you have 10 or more cards in your Out Zone, you may play it to your front row instead.', ops: [{"op":"mill","n":1},{"op":"playFromOutzone","filter":"Green","maxCost":4},{"op":"playOutzoneRest","row":"front","req":[{"kind":"outzoneMin","min":10}]}] },
       { kw: 'Trigger', text: 'Mill 1 and draw 1 card.', ops: [{"op":"draw","n":1},{"op":"mill","n":1}] }
     ],
   },
@@ -308,7 +308,7 @@ const CARDS = [
     cost: 4, cp: 3000,
     protection: false,
     abilities: [
-      { kw: 'On Play', when: 'deploy', text: 'Mill 1. Then, if you have 10 or more cards in your Out Zone, draw 1 card.', ops: [{"op":"draw","n":1},{"op":"mill","n":1}], req: [{"kind":"outzoneMin","min":10}] },
+      { kw: 'On Play', when: 'deploy', text: 'Mill 1. Then, if you have 10 or more cards in your Out Zone, draw 1 card.', ops: [{"op":"mill","n":1},{"op":"draw","n":1,"req":[{"kind":"outzoneMin","min":10}]}] },
       { kw: 'Trigger', text: 'Mill 2.', ops: [{"op":"mill","n":2}] }
     ],
   },
@@ -318,7 +318,7 @@ const CARDS = [
     cost: 2, cp: 1000,
     protection: false,
     abilities: [
-      { kw: 'On Play', when: 'deploy', text: 'Mill 1. Then, choose up to 1 Adventurer unit, Map card, or Treasure Strategy card from your Out Zone; add it to your hand. If you have 10 or more cards in your Out Zone, look at the top card of your deck; place it on top of your deck or send it to the Out Zone.', ops: [{"op":"mill","n":1}], req: [{"kind":"outzoneMin","min":10}] }
+      { kw: 'On Play', when: 'deploy', text: 'Mill 1. Then, choose up to 1 Adventurer unit, Map card, or Treasure Strategy card from your Out Zone; add it to your hand. If you have 10 or more cards in your Out Zone, look at the top card of your deck; place it on top of your deck or send it to the Out Zone.', ops: [{"op":"mill","n":1},{"op":"addFromOutzone","filter":"Adventurer|Map|Treasure","prompt":"เลือก Adventurer / Map / Treasure จาก Outzone ขึ้นมือ"},{"op":"reveal","n":1,"prompt":"เปิดดูใบบนสุดเด็ค (วางคืนบนยอดหรือส่ง Outzone)","req":[{"kind":"outzoneMin","min":10}]}] }
     ],
   },
   {

@@ -1,7 +1,7 @@
 {
   "name": "Zonefall · Rift Lobby",
   "short_name": "Zonefall",
-  "description": "ห้องโถงเว็บของการ์ดเกม Zonefall (rulebook Dev V.24) — คลังการ์ดจริง 52 ใบ ร้านค้า แผงเด็คพร้อม deckcheck อีเวนต์ แรงก์ และสนามที่เรียก engine จริง",
+  "description": "ห้องโถงเว็บของการ์ดเกม Zonefall (Official Rulebook V.25) — คลังการ์ดจริง 52 ใบ ร้านค้า แผงเด็คพร้อม deckcheck อีเวนต์ แรงก์ และสนามที่เรียก engine จริง",
   "start_url": "./index.html?menu=lobby",
   "scope": "./",
   "display": "standalone",

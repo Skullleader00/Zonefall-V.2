@@ -17,8 +17,9 @@
   const COL = ['A', 'B', 'C'];
   const cellName = (r, c) => (r + 1) + COL[c];
   const FACTION_ICON = { Green: 'verdant', Blue: 'aegis', Red: 'ashen', Purple: 'nyx-horizon', Yellow: 'thronis', Colorless: 'aegis' };
-  const PHASE_ICON = { draw: 'assets/ui/icon-phase-draw.png', main: 'assets/ui/icon-phase-main.png', end: 'assets/ui/icon-phase-end.png' };
-  const PHASE_TXT = { draw: 'DRAW Phase', main: 'MAIN Phase', end: 'END Phase' };
+  const PHASE_ICON = { draw: 'assets/ui/icon-phase-draw.png', main: 'assets/ui/icon-phase-main.png', battle: 'assets/ui/icon-attack.png', end: 'assets/ui/icon-phase-end.png' };
+  const PHASE_TXT = { draw: 'START · DRAW', main: 'MAIN', battle: 'BATTLE', end: 'END' };
+  const FX_STEP = 300;   // ms ระหว่างแต่ละขั้นตอนของแอนิเมชัน (ให้ไล่เห็นทีละขั้น ไม่รวบ)
   const artOf = cd => 'assets/art/' + cd.file + '.jpg';        // หน้าต่างภาพจากสแกน (ถมช่องสนาม)
   const scanOf = cd => cd.art;                                  // สแกนเต็มใบ (มือ/ชีข้อมูล/ป๊อปอัพ)
   const kindLine = cd => ({ unit: 'UNIT', command: 'COMMAND', terrain: 'TERRAIN', token: 'TOKEN' })[cd.type] || 'CARD';
@@ -223,6 +224,31 @@
     box.scrollBy({ left: dir * w * 2, behavior: 'smooth' });
     setTimeout(() => hand(UI.S.players[human]), 380);
   }
+  /* เลื่อนดูการ์ดในมือ: ล้อเมาส์ (ตั้ง→นอน), ลากเมาส์บนพื้นที่ว่าง, และ touch pan-x บนมือถือ */
+  function bindHandScroll() {
+    const box = $('hand');
+    box.addEventListener('wheel', e => {
+      const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      if (box.scrollWidth > box.clientWidth + 4) { e.preventDefault(); box.scrollLeft += d; }
+    }, { passive: false });
+    // ลากเมาส์บนพื้น/ช่องว่างของมือ = เลื่อน (ไม่ชนการลากร่างการ์ดเพื่อลง)
+    let pan = null;
+    box.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target.closest('.gcard')) return;               // ปล่อยให้การลากร่างการ์ดเป็นของ bindHandDrag
+      pan = { x: e.clientX, sl: box.scrollLeft };
+      box.setPointerCapture && box.setPointerCapture(e.pointerId);
+      box.classList.add('panning');
+    });
+    box.addEventListener('pointermove', e => {
+      if (!pan) return;
+      box.scrollLeft = pan.sl - (e.clientX - pan.x);
+    });
+    const endPan = () => { pan = null; box.classList.remove('panning'); };
+    box.addEventListener('pointerup', endPan);
+    box.addEventListener('pointercancel', endPan);
+    box.addEventListener('pointerleave', endPan);
+  }
 
   /* วาด highlight จาก UI.hl ลงบนช่อง (ใช้ทั้ง tap และ drag) */
   function applyHL() {
@@ -240,7 +266,14 @@
   /* ============ คิวแอนิเมชันจาก engine ============ */
   function drainFx(S) {
     const list = Z.drainFx(S); if (!list.length) return;
-    for (const ev of list) animate(ev);
+    // ไล่แสดงทีละขั้นตอน (ไม่รวบ) — 'ask' ต้องเปิดแผงทันที ส่วนอื่น stagger ตามลำดับ
+    let step = 0;
+    for (const ev of list) {
+      if (ev.t === 'ask') { animate(ev); continue; }
+      const delay = step * FX_STEP; step++;
+      if (delay <= 0) animate(ev); else setTimeout(() => animate(ev), delay);
+    }
+    UI.fxTail = (UI.fxTail || 0) + step * FX_STEP;
   }
   function ringAt(elm, cls, ms) {
     if (!elm) return;
@@ -262,7 +295,7 @@
     switch (ev.t) {
       case 'deploy': { const t = tkEl(ev.uid); if (t) { const r = t.getBoundingClientRect(); const c = cellEl(ev.cell[0], ev.cell[1]).getBoundingClientRect(); t.animate([{ transform: `translate(${c.x - r.x}px,${c.y - r.y - 26}px) scale(1.12) rotate(-6deg)`, opacity: .25 }, { transform: 'none', opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.95,.2,1)' }); ringAt(cellOf(ev.uid), 'flash-ok', 700); } break; }
       case 'move': ringAt(cellOf(ev.uid), 'flash-move', 620); break;
-      case 'attack': { const a = tkEl(ev.from), b = tkEl(ev.to); if (a && b) { const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect(); a.animate([{ transform: 'none' }, { transform: `translate(${(r2.x - r1.x) * .42}px,${(r2.y - r1.y) * .42}px) scale(1.05)` }, { transform: 'none' }], { duration: 300, easing: 'ease-out' }); } break; }
+      case 'attack': { const au = S.cards[ev.from]; phaseBanner('battle', au && au.side); { const a = tkEl(ev.from), b = tkEl(ev.to); if (a && b) { const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect(); a.animate([{ transform: 'none' }, { transform: `translate(${(r2.x - r1.x) * .42}px,${(r2.y - r1.y) * .42}px) scale(1.05)` }, { transform: 'none' }], { duration: 320, easing: 'ease-out' }); } } break; }
       case 'hit': { const t = tkEl(ev.uid); ringAt(t, 'shk', 560); if (t) flyText(`−${(ev.n || 0).toLocaleString()} CP`, t, null, 'bad'); break; }
       case 'destroy': { const c = cellOf(ev.uid) || cellEl(0, 0); if (c) ringAt(c, 'flash-bad', 760); flashGhost(ev.cardId, c); break; }
       case 'effect': { const t = tkEl(ev.uid); const who = t || (ev.side === human ? $('btnAbility') : null); ringAt(who, 'glow-effect', 780); if (t) flyText(`<em>${esc(ev.kw || 'Effect')}</em>`, t, null, 'kw'); break; }
@@ -276,6 +309,7 @@
       case 'reveal': showReveal(ev); break;
       case 'trigger': showReveal({ side: ev.side, ids: [ev.cardId], reason: 'Trigger Check', flip: true }); break;
       case 'ask': renderAsk(); break;
+      case 'phase': phaseBanner(ev.phase, ev.side); break;
     }
   }
   function flashGhost(cardId, cell) {
@@ -680,11 +714,21 @@
     await sleep(ms || 900);
     b.className = 'banner';
   }
+  /* ป้ายประกาศเปลี่ยนเฟส (แบบยูกิโอ) — ไม่บล็อกเกม, มีไอคอน + สีตามฝ่ายที่เล่น */
+  function phaseBanner(phase, side) {
+    const b = $('banner'); if (!b) return;
+    const foe_ = side && side !== human;
+    const ic = PHASE_ICON[phase] || PHASE_ICON.main;
+    const txt = PHASE_TXT[phase] || 'MAIN';
+    b.className = 'banner show phase' + (foe_ ? ' foe' : '');
+    b.innerHTML = `<span class="ph"><img src="${ic}" alt="">${esc(txt)}</span>`;
+    clearTimeout(phaseBanner._t);
+    phaseBanner._t = setTimeout(() => { if (b.classList.contains('phase')) b.className = 'banner'; }, phase === 'battle' ? 620 : 820);
+  }
   async function humanEnd() {
     const S = UI.S;
     if (!S || S.active !== human || UI.busy || S.pending || S.uiAsk) return;
     clearSel();
-    banner('END PHASE', false, 420);
     Z.endTurn(S);
     render(); await settleAsks();
     maybeOver();
@@ -898,6 +942,7 @@
     syncFull();
     $('pgL').onclick = () => panHand(-1); $('pgR').onclick = () => panHand(1);
     $('hand').addEventListener('scroll', () => { const b = $('hand'); $('pgL').disabled = b.scrollLeft < 4; $('pgR').disabled = b.scrollLeft + b.clientWidth > b.scrollWidth - 4; }, { passive: true });
+    bindHandScroll();
     $('askX').onclick = () => { const a = UI.S && UI.S.uiAsk; if (a && (a.allowSkip || a.kind === 'triggerUse')) answer(a.kind === 'triggerUse' ? 'keep' : null); };
     $('zvClose').onclick = () => $('zoneView').classList.add('hidden');
     document.querySelectorAll('.zonepile').forEach(b => b.addEventListener('click', () => {

@@ -167,6 +167,12 @@ img{-webkit-user-drag:none;user-select:none}
   border-block:3px solid var(--core);text-shadow:0 0 20px #ff8a0088;animation:slam .42s cubic-bezier(.2,.9,.15,1)}
 .banner.foe span{border-block-color:#e01818;text-shadow:0 0 20px #e0181888}
 @keyframes slam{from{transform:scale(1.5) skewX(-14deg);opacity:0}to{transform:none;opacity:1}}
+/* ป้ายเฟสแบบยูกิโอ: แถบเลื่อนเข้าพร้อมไอคอน */
+.banner.phase span{display:flex;align-items:center;gap:12px;font-size:clamp(15px,4.2vw,28px);letter-spacing:5px;
+  padding:7px 24px;animation:phaseSlide .46s cubic-bezier(.2,.9,.15,1)}
+.banner.phase span img{width:1.5em;height:1.5em;object-fit:contain;filter:drop-shadow(0 0 7px #ff8a00aa)}
+.banner.phase.foe span img{filter:drop-shadow(0 0 7px #e0181888)}
+@keyframes phaseSlide{from{transform:translateX(-34px) skewX(-12deg);opacity:0}to{transform:none;opacity:1}}
 
 /* ---------------- มือการ์ด: รูปสแกนจริงเต็มใบ ---------------- */
 #handWrap{position:relative;border-top:2px solid #000;padding-top:2px;background:linear-gradient(180deg,#15161c,#0b0c11);min-height:0}
@@ -177,9 +183,12 @@ img{-webkit-user-drag:none;user-select:none}
 .hand-head #handLabel{color:var(--txt)}
 .hint{flex:1;text-align:right;color:var(--core-hi);font-size:10.5px;line-height:1.35;font-family:var(--fui);letter-spacing:0}
 .hand::-webkit-scrollbar{display:none}
-.hand{display:flex;gap:10px;width:100%;min-width:0;align-items:flex-end;
+.hand{display:flex;gap:10px;width:100%;min-width:0;align-items:flex-end;justify-content:safe center;
   overflow-x:auto;overflow-y:hidden;padding:16px 34px 20px;min-height:0;scrollbar-width:none;scroll-padding:0 50%;
+  touch-action:pan-x;cursor:grab;
   mask-image:linear-gradient(90deg,#0000 0,#000 4%,#000 96%,#0000 100%)}
+.hand.panning{cursor:grabbing;user-select:none}
+.hand.panning .gcard{pointer-events:none}
 .hand::-webkit-scrollbar{display:none}
 .gcard{--cw:clamp(96px,(100vw - 44px)/min(max(var(--n,5),1),5),160px);position:relative;flex:0 0 auto;
   width:var(--cw);aspect-ratio:2337/3264;border:0;padding:0;background:none;cursor:grab;touch-action:none;
@@ -374,6 +383,12 @@ body.ingame .hand,body.ingame .log-body,body.ingame .zv-body,body.ingame .modal,
 .pgbtn:active{transform:scale(.9)}
 .pgbtn:disabled{opacity:.22;filter:grayscale(1)}
 @media (min-width:1180px){.pgbtn{display:none}}
+/* ไอคอน SVG ของเกม (ปุ่ม utility) */
+.ic{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block}
+.hexpush{display:grid;place-items:center}
+.hexpush .ic{width:18px;height:18px}
+.pgbtn{display:grid;place-items:center}
+.pgbtn .ic{width:16px;height:20px}
 
 /* ---------------- log ---------------- */
 #logDrawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);z-index:46;transform:translateX(102%);

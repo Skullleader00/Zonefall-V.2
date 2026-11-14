@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0e0e14">
-<meta name="description" content="Zonefall — เกมการ์ดยึด Core Zone (ดิจิทัล build ตาม rulebook Dev V.24 · การ์ดจริง 52 ใบ)">
+<meta name="description" content="Zonefall — เกมการ์ดยึด Core Zone (ดิจิทัล build ตาม Official Rulebook V.25 · การ์ดจริง 52 ใบ)">
 <title>ZONEFALL — ยึด Core Zone ให้ครบ 7 แต้ม</title>
-<link rel="manifest" href="manifest.webmanifest?v=1794666048-ea7644">
+<link rel="manifest" href="manifest.webmanifest?v=1794668769-d5465e">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-512.png">
-<link rel="stylesheet" href="css/game.css?v=1794666048-ea7644">
+<link rel="stylesheet" href="css/game.css?v=1794668769-d5465e">
 </head>
 <body>
 <div id="shell">
@@ -23,11 +23,11 @@
     </div>
     <div class="phase-chip" id="phaseChip"><img src="assets/ui/icon-phase-main.png" alt="">MAIN Phase</div>
     <div class="top-acts">
-      <button class="hexpush" id="btnRules" title="กติกา">?</button>
-      <button class="hexpush" id="btnLog" title="Log">≡</button>
-      <button class="hexpush" id="btnCatalog2" title="คาตาล็อก">▤</button>
-      <button class="hexpush" id="btnFull" title="เต็มจอ">⤢</button>
-      <button class="hexpush" id="btnMenu" title="หน้าหลัก">⌂</button>
+      <button class="hexpush" id="btnRules" title="กติกา"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h9l4 4v12H5z"/><path d="M14 4v4h4"/><path d="M8 12h7M8 16h7"/></svg></button>
+      <button class="hexpush" id="btnLog" title="Log"><svg class="ic" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg></button>
+      <button class="hexpush" id="btnCatalog2" title="คาตาล็อก"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg></button>
+      <button class="hexpush" id="btnFull" title="เต็มจอ"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button class="hexpush" id="btnMenu" title="หน้าหลัก"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg></button>
     </div>
   </header>
 
@@ -89,9 +89,9 @@
   <section id="handWrap">
     <div class="hand-head"><span id="handLabel">มือ : 4</span><span class="hint" id="hint">แตะการ์ดในมือเพื่อลง</span></div>
     <div class="hand-wrap2">
-      <button class="pgbtn" id="pgL" aria-label="เลื่อนมือไปซ้าย">‹</button>
+      <button class="pgbtn" id="pgL" aria-label="เลื่อนมือไปซ้าย"><svg class="ic" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg></button>
       <div id="hand" class="hand"></div>
-      <button class="pgbtn" id="pgR" aria-label="เลื่อนมือไปขวา">›</button>
+      <button class="pgbtn" id="pgR" aria-label="เลื่อนมือไปขวา"><svg class="ic" viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg></button>
     </div>
   </section>
 
@@ -201,7 +201,7 @@
         <button class="link-btn" id="btnCatalog">คาตาล็อกการ์ด</button>
         <button class="link-btn" id="btnImport">ข้อมูลการ์ด/asset</button>
       </div>
-      <p class="seedline">seed <b id="seedTag">—</b> · 52 การ์ดจริง (SB01/SD01/SD04) · rulebook Dev V.25 · โจมตี = วางนอน ไม่ใช้ Flare · Trigger Check 1 ใบ · ตัด Extra Zone / Arcanum แล้ว</p>
+      <p class="seedline">seed <b id="seedTag">—</b> · 52 การ์ดจริง (SB01/SD01/SD04) · Official Rulebook V.25 · โจมตี = วางนอน ไม่ใช้ Flare · Trigger Check 1 ใบ/ครั้ง · Mulligan มือ 6 ใบ · ตัด Extra Zone / Arcanum แล้ว</p>
     </div>
 
     <div class="modal hidden" id="modalRules"></div>
@@ -219,12 +219,12 @@
   </div>
 
 </div>
-<script src="js/data.js?v=1794666048-ea7644"></script>
-<script src="js/ability-ops.js?v=1794666048-ea7644"></script>
-<script src="js/engine.js?v=1794666048-ea7644"></script>
-<script src="js/effects.js?v=1794666048-ea7644"></script>
-<script src="js/ai.js?v=1794666048-ea7644"></script>
-<script src="js/lobby-bridge.js?v=1794666048-ea7644"></script>
-<script src="js/ui.js?v=1794666048-ea7644"></script>
+<script src="js/data.js?v=1794668769-d5465e"></script>
+<script src="js/ability-ops.js?v=1794668769-d5465e"></script>
+<script src="js/engine.js?v=1794668769-d5465e"></script>
+<script src="js/effects.js?v=1794668769-d5465e"></script>
+<script src="js/ai.js?v=1794668769-d5465e"></script>
+<script src="js/lobby-bridge.js?v=1794668769-d5465e"></script>
+<script src="js/ui.js?v=1794668769-d5465e"></script>
 </body>
 </html>

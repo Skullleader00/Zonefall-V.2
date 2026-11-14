@@ -228,7 +228,7 @@ const Z = (function () {
   /* ------------------------------------------------------------ turn flow */
   function startTurn(S) {
     S.turnNo++; S.phase = 'draw'; S.turnActions = 0; S.pending = null;
-    S.players.p0.tcDone = false; S.players.p1.tcDone = false;   // Trigger Check: 1 ใบ/ฝ่าย/เทิร์น
+    S.players.p0.tcDone = false; S.players.p1.tcDone = false;   // (tcDone ไม่ใช้ล็อกแล้ว — Trigger Check เกิดทุกครั้งที่อีกฝ่ายได้แต้ม)
     S.active = S.turnNo % 2 === 1 ? S.first : foe(S.first);
     const side = S.active, p = S.players[side];
     p.myTurns++;
@@ -240,8 +240,10 @@ const Z = (function () {
     const skipFirstDraw = R.firstPlayerNoFirstDraw && p.myTurns === 1 && side === S.first;
     if (skipFirstDraw) log(S, `${p.deckName} (ฝ่ายเริ่มก่อน) ไม่จั่วในเทิร์นแรก`, 'dim');
     else draw(S, side);
+    fxq(S, { t: 'phase', phase: 'draw', side });
     log(S, `— เทิร์น ${p.myTurns} (${S.turnNo}) ของ ${p.deckName} · Flare ${p.flare} —`, 'turn');
     S.phase = 'main';
+    fxq(S, { t: 'phase', phase: 'main', side });
     runUpkeep(S, side);
     if (S.winner) return S;
     return S;
@@ -249,13 +251,14 @@ const Z = (function () {
 
   function endTurn(S) {
     S.phase = 'end';
+    fxq(S, { t: 'phase', phase: 'end', side: S.active });
     const side = S.active, p = S.players[side];
     /* ---- End Phase ตามลำดับของ rulebook ---- */
     const coreMine = units(S, side).filter(u => u.r === R.coreRow);
     if (coreMine.length) {
       p.corePoints += coreMine.length;
       log(S, `◆ Core Zone: ${coreMine.length} ใบ → +${coreMine.length} Core Point (รวม ${p.corePoints}/${R.corePointsToWin})`, 'good');
-      triggerCheck(S, foe(side));               // ได้หลายแต้มก็เปิดเช็คได้แค่ 1 ใบ (ตาม rulebook)
+      triggerCheck(S, foe(side));               // หลายแต้มพร้อมกัน = เช็ค 1 ใบ (txt §7/Q5)
     }
     /* Terrain ที่ทำลายตัวเองตอนเอนเฟส */
     terrains(S, side).forEach(t => {
@@ -414,6 +417,11 @@ const Z = (function () {
   function applyOp(S, src, op, ctx, ops, i) {
     const side = src.side;
     const who = () => (ctx.toOverride === 'foe' ? foe(side) : side);
+    // rulebook "do as much as you can": เงื่อนไขที่ผูกกับ op เดียว (op.req) ให้ข้ามเฉพาะ op นี้ ไม่ใช่ทั้งเอฟเฟกต์
+    if (op && op.req && !passReq(S, side, src.uid ? S.cards[src.uid] : null, op.req)) {
+      log(S, `  ↳ ${op.op} — ไม่ตรงเงื่อนไข (ข้ามเฉพาะส่วนนี้)`, 'dim');
+      return;
+    }
     let cancelled = false;
     const targetOps = { cp: 1, destroy: 1, bounce: 1, move: 1, ready: 1, rest: 1, noDestroyBattle: 1, setPower: 1, damage: 1 };
     const askKind = op.to && String(op.to).indexOf('ask:') === 0 ? String(op.to).slice(4) : null;
